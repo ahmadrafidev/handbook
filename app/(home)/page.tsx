@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col justify-center px-6 py-16">
-      <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="mx-auto w-full max-w-2xl space-y-4 md:space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-            devbook - an opinionated handbook
+          <h1 className="text-xl md:text-3xl font-semibold tracking-tight">
+            devbook - an opinionated engineering handbook
           </h1>
           <p className="text-fd-muted-foreground">
-            my personal collection of notes, learnings, and references in software engineering.
+            a highly curated collection of notes, learnings, and personal references.
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function HomePage() {
             href="https://www.rafiwirana.co/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
           >
             Personal Website
             <ExternalLink className="h-3 w-3" />
@@ -36,7 +36,7 @@ export default function HomePage() {
             href="https://github.com/ahmadrafidev"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
           >
             GitHub
             <ExternalLink className="h-3 w-3" />
@@ -45,7 +45,7 @@ export default function HomePage() {
             href="https://linkedin.com/in/ahmadrafiwirana"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
           >
             LinkedIn
             <ExternalLink className="h-3 w-3" />
