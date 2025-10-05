@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight, ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -10,19 +10,50 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col justify-center px-6 py-16">
-      <div className="mx-auto w-full max-w-3xl space-y-8">
-        {/* Simple Header */}
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Developer's Handbook
+      <div className="mx-auto w-full max-w-2xl space-y-6">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">
+            devbook - an opinionated handbook
           </h1>
-          <p className="text-lg text-fd-muted-foreground leading-relaxed">
-            My personal collection of notes, learnings, and references as I build and grow as a developer.
+          <p className="text-fd-muted-foreground">
+            my personal collection of notes, learnings, and references in software engineering.
           </p>
         </div>
 
+        {/* Social Links */}
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="https://www.rafiwirana.co/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            Personal Website
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href="https://github.com/ahmadrafidev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            GitHub
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href="https://linkedin.com/in/ahmadrafiwirana"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            LinkedIn
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+
         {/* Quick Links */}
-        <div className="flex flex-col gap-3 pt-4">
+        <div className="flex flex-col gap-2 pt-2">
           <Link
             href="/docs"
             className="group flex items-center justify-between rounded-lg border border-fd-border bg-fd-card p-4 transition-colors hover:bg-fd-accent"
@@ -32,7 +63,7 @@ export default function HomePage() {
               <div>
                 <div className="font-medium">Browse Notes</div>
                 <div className="text-sm text-fd-muted-foreground">
-                  Explore my dev notes and learnings
+                  Explore notes and learnings
                 </div>
               </div>
             </div>
