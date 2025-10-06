@@ -1,0 +1,59 @@
+---
+title: Web3 & Blockchain
+description: Decentralized applications and blockchain technology basics
+---
+
+# Web3 & Blockchain
+
+Web3 represents the decentralized internet built on blockchain technology.
+
+## Core Concepts
+
+### Blockchain
+
+A distributed, immutable ledger of transactions.
+
+### Smart Contracts
+
+Self-executing code on the blockchain.
+
+```solidity
+contract SimpleStorage {
+  uint256 storedData;
+  
+  function set(uint256 x) public {
+    storedData = x;
+  }
+}
+```
+
+### Wallet Integration
+
+```typescript
+import { ethers } from 'ethers'
+
+const provider = new ethers.providers.Web3Provider(window.ethereum)
+const signer = provider.getSigner()
+```
+
+## Popular Platforms
+
+- **Ethereum**: Smart contract platform
+- **Solana**: High-performance blockchain
+- **Polygon**: Ethereum scaling solution
+
+## Development Tools
+
+- Hardhat
+- Ethers.js / Web3.js
+- MetaMask
+- Alchemy
+- The Graph
+
+## Use Cases
+
+- DeFi (Decentralized Finance)
+- NFTs (Non-Fungible Tokens)
+- DAOs (Decentralized Organizations)
+- dApps (Decentralized Applications)
+

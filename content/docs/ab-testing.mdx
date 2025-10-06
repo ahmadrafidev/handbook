@@ -1,0 +1,384 @@
+---
+title: A/B Testing
+description: Experiment-driven product development through controlled testing
+---
+
+# A/B Testing
+
+A/B testing is a method of comparing two versions of a product to determine which performs better based on measurable outcomes.
+
+## Core Concepts
+
+### What is A/B Testing?
+
+A/B testing (split testing) randomly shows users different versions of a feature to measure which performs better against a goal metric.
+
+**Key Components:**
+- **Control (A)**: Current version
+- **Variant (B)**: New version
+- **Metric**: What you're measuring
+- **Sample Size**: Number of users needed
+- **Statistical Significance**: Confidence in results
+
+## Experiment Design
+
+### 1. Define Hypothesis
+
+```markdown
+## Hypothesis Template
+
+**Current Situation:** 
+Users abandon checkout at 45% rate
+
+**Proposed Change:**
+Add trust badges to checkout page
+
+**Expected Outcome:**
+Reduce abandonment by 10%
+
+**Success Metric:**
+Checkout completion rate
+```
+
+### 2. Choose Metrics
+
+```typescript
+interface ExperimentMetrics {
+  // Primary metric (one only)
+  primary: {
+    name: 'conversion_rate'
+    target: 0.15 // 15% improvement
+  }
+  
+  // Secondary metrics
+  secondary: [
+    { name: 'average_order_value', target: null },
+    { name: 'time_to_checkout', target: null }
+  ]
+  
+  // Guardrail metrics (shouldn't decrease)
+  guardrails: [
+    { name: 'page_load_time', threshold: 2000 }, // ms
+    { name: 'error_rate', threshold: 0.01 } // 1%
+  ]
+}
+```
+
+### 3. Calculate Sample Size
+
+```typescript
+function calculateSampleSize(
+  baselineRate: number,
+  minimumDetectableEffect: number,
+  significance: number = 0.05,
+  power: number = 0.8
+): number {
+  // Simplified calculation
+  const p1 = baselineRate
+  const p2 = baselineRate * (1 + minimumDetectableEffect)
+  
+  const z_alpha = 1.96 // 95% confidence
+  const z_beta = 0.84  // 80% power
+  
+  const pooled = (p1 + p2) / 2
+  
+  const n = Math.pow(
+    (z_alpha * Math.sqrt(2 * pooled * (1 - pooled)) + 
+     z_beta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))),
+    2
+  ) / Math.pow(p1 - p2, 2)
+  
+  return Math.ceil(n)
+}
+
+// Example
+const sampleSize = calculateSampleSize(
+  0.10,  // 10% baseline conversion
+  0.15,  // Want to detect 15% improvement
+  0.05,  // 95% confidence
+  0.8    // 80% power
+)
+// Result: ~3,500 users per variant
+```
+
+## Implementation
+
+### Feature Flag Integration
+
+```typescript
+import { useFeatureFlag } from './flags'
+
+function CheckoutPage() {
+  const showTrustBadges = useFeatureFlag('checkout-trust-badges', {
+    userId: user.id,
+    attributes: {
+      country: user.country,
+      plan: user.plan
+    }
+  })
+  
+  return (
+    <div>
+      {showTrustBadges ? (
+        <CheckoutWithBadges />
+      ) : (
+        <CheckoutOriginal />
+      )}
+    </div>
+  )
+}
+```
+
+### Event Tracking
+
+```typescript
+interface ExperimentEvent {
+  experimentId: string
+  variant: 'control' | 'treatment'
+  userId: string
+  timestamp: Date
+  event: string
+  value?: number
+}
+
+class ExperimentTracker {
+  track(event: ExperimentEvent) {
+    // Send to analytics
+    analytics.track('experiment_event', {
+      experiment_id: event.experimentId,
+      variant: event.variant,
+      user_id: event.userId,
+      event_name: event.event,
+      value: event.value,
+      timestamp: event.timestamp
+    })
+  }
+  
+  trackConversion(experimentId: string, variant: string, value: number) {
+    this.track({
+      experimentId,
+      variant: variant as 'control' | 'treatment',
+      userId: getCurrentUserId(),
+      timestamp: new Date(),
+      event: 'conversion',
+      value
+    })
+  }
+}
+```
+
+## Statistical Analysis
+
+### Calculate Results
+
+```typescript
+interface ExperimentResults {
+  control: {
+    users: number
+    conversions: number
+    rate: number
+  }
+  treatment: {
+    users: number
+    conversions: number
+    rate: number
+  }
+  improvement: number
+  pValue: number
+  significant: boolean
+}
+
+function analyzeExperiment(data: ExperimentData): ExperimentResults {
+  const controlRate = data.control.conversions / data.control.users
+  const treatmentRate = data.treatment.conversions / data.treatment.users
+  
+  const improvement = (treatmentRate - controlRate) / controlRate
+  
+  // Calculate p-value (simplified)
+  const pValue = calculatePValue(data)
+  
+  return {
+    control: {
+      users: data.control.users,
+      conversions: data.control.conversions,
+      rate: controlRate
+    },
+    treatment: {
+      users: data.treatment.users,
+      conversions: data.treatment.conversions,
+      rate: treatmentRate
+    },
+    improvement,
+    pValue,
+    significant: pValue < 0.05
+  }
+}
+```
+
+## Common Pitfalls
+
+### 1. Peeking at Results
+
+```typescript
+// ❌ Bad: Check results daily and stop early
+if (pValue < 0.05 && daysSinceStart < 7) {
+  stopExperiment() // Don't do this!
+}
+
+// ✅ Good: Wait for planned duration
+if (daysSinceStart >= plannedDuration && sampleSizeReached) {
+  const results = analyzeExperiment()
+  if (results.significant) {
+    rolloutWinner()
+  }
+}
+```
+
+### 2. Multiple Testing
+
+```typescript
+// ❌ Bad: Test many metrics without correction
+const significantMetrics = metrics.filter(m => m.pValue < 0.05)
+
+// ✅ Good: Bonferroni correction
+const adjustedAlpha = 0.05 / metrics.length
+const significantMetrics = metrics.filter(m => m.pValue < adjustedAlpha)
+```
+
+## Testing Tools
+
+### LaunchDarkly Example
+
+```typescript
+import { useLDClient } from 'launchdarkly-react-client-sdk'
+
+function ProductPage() {
+  const ldClient = useLDClient()
+  const newLayout = ldClient?.variation('product-page-layout', false)
+  
+  useEffect(() => {
+    if (newLayout) {
+      ldClient?.track('product-page-viewed', {
+        variant: 'new-layout'
+      })
+    }
+  }, [newLayout])
+  
+  return newLayout ? <NewLayout /> : <OldLayout />
+}
+```
+
+### Optimizely Example
+
+```typescript
+import { OptimizelyProvider, useExperiment } from '@optimizely/react-sdk'
+
+function CheckoutButton() {
+  const [variation, clientReady] = useExperiment('checkout-button-color')
+  
+  const buttonColor = variation === 'red' ? '#ff0000' : '#0070f3'
+  
+  return (
+    <button style={{ backgroundColor: buttonColor }}>
+      Checkout
+    </button>
+  )
+}
+```
+
+## Best Practices
+
+### Do
+✅ Have a clear hypothesis
+✅ Calculate sample size beforehand
+✅ Run for full business cycle
+✅ Test one thing at a time
+✅ Wait for statistical significance
+✅ Consider seasonality
+✅ Document everything
+✅ Segment results
+
+### Don't
+❌ Peek at results early
+❌ Stop test too soon
+❌ Change test mid-flight
+❌ Test too many things
+❌ Ignore guardrail metrics
+❌ Run without power analysis
+❌ Deploy without verification
+❌ Forget about novelty effect
+
+## Multivariate Testing
+
+```typescript
+interface MultivariateTest {
+  factors: {
+    buttonColor: ['blue', 'red', 'green']
+    buttonText: ['Buy Now', 'Add to Cart', 'Purchase']
+    trustBadge: [true, false]
+  }
+  // Total combinations: 3 × 3 × 2 = 18 variants
+}
+
+// Requires much larger sample size
+const mvtSampleSize = calculateMVTSampleSize({
+  variants: 18,
+  baselineRate: 0.10,
+  effect: 0.15
+})
+```
+
+## Advanced Techniques
+
+### Sequential Testing
+
+```typescript
+// SPRT (Sequential Probability Ratio Test)
+function shouldStopExperiment(data: ExperimentData): {
+  stop: boolean
+  winner?: 'control' | 'treatment'
+} {
+  const ratio = calculateLikelihoodRatio(data)
+  
+  if (ratio > upperBound) {
+    return { stop: true, winner: 'treatment' }
+  }
+  
+  if (ratio < lowerBound) {
+    return { stop: true, winner: 'control' }
+  }
+  
+  return { stop: false }
+}
+```
+
+### Bayesian A/B Testing
+
+```typescript
+function bayesianAnalysis(data: ExperimentData) {
+  // Calculate probability that B beats A
+  const probBBeatsA = calculatePosterior(data)
+  
+  return {
+    probabilityOfSuperiority: probBBeatsA,
+    expectedLift: calculateExpectedLift(data),
+    credibleInterval: calculateCredibleInterval(data)
+  }
+}
+```
+
+## Tools & Platforms
+
+- **Optimizely**: Enterprise A/B testing
+- **Google Optimize**: Free A/B testing
+- **VWO**: Conversion optimization
+- **LaunchDarkly**: Feature flagging + experiments
+- **Split.io**: Feature delivery platform
+- **Statsig**: Experimentation platform
+
+## Resources
+
+- "Trustworthy Online Controlled Experiments" - Kohavi et al.
+- Evan Miller's A/B testing tools
+- GrowthBook (open source)
+

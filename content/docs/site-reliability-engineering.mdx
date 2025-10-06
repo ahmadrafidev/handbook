@@ -1,0 +1,894 @@
+---
+title: Site Reliability Engineering (SRE)
+description: Building and operating reliable, scalable systems at scale
+---
+
+# Site Reliability Engineering (SRE)
+
+SRE is a discipline that applies software engineering principles to infrastructure and operations problems.
+
+## Core Principles
+
+### 1. Service Level Objectives (SLOs)
+
+**SLO = Target reliability level for a service**
+
+```typescript
+interface SLO {
+  name: string
+  target: number // e.g., 99.9%
+  window: string // e.g., "30d"
+  indicator: SLI
+}
+
+const apiSLO: SLO = {
+  name: 'API Availability',
+  target: 99.9,
+  window: '30d',
+  indicator: {
+    type: 'availability',
+    measurement: 'successful_requests / total_requests'
+  }
+}
+```
+
+### 2. Service Level Indicators (SLIs)
+
+**SLI = Quantitative measure of service level**
+
+```typescript
+// Common SLIs
+const slis = {
+  // Availability
+  availability: {
+    measurement: 'successful_requests / total_requests',
+    target: 0.999 // 99.9%
+  },
+  
+  // Latency
+  latency: {
+    measurement: 'requests_under_200ms / total_requests',
+    target: 0.95 // 95th percentile < 200ms
+  },
+  
+  // Throughput
+  throughput: {
+    measurement: 'requests_per_second',
+    target: 1000 // min 1000 rps
+  },
+  
+  // Error rate
+  errorRate: {
+    measurement: 'error_requests / total_requests',
+    target: 0.001 // < 0.1%
+  }
+}
+```
+
+### 3. Service Level Agreements (SLAs)
+
+**SLA = Contractual agreement with consequences**
+
+```typescript
+interface SLA {
+  slo: SLO
+  consequences: {
+    breach: string
+    penalty: string
+  }
+}
+
+const apiSLA: SLA = {
+  slo: apiSLO,
+  consequences: {
+    breach: '< 99.9% uptime in 30 days',
+    penalty: '10% service credit'
+  }
+}
+```
+
+## Error Budgets
+
+### Concept
+
+```typescript
+class ErrorBudget {
+  private slo: number // e.g., 99.9%
+  private window: number // in seconds
+  
+  calculateBudget(): number {
+    const allowedDowntime = (1 - this.slo / 100) * this.window
+    return allowedDowntime
+  }
+  
+  getRemainingBudget(actualUptime: number): number {
+    const allowedDowntime = this.calculateBudget()
+    const actualDowntime = this.window - actualUptime
+    return allowedDowntime - actualDowntime
+  }
+}
+
+// Example: 99.9% SLO for 30 days
+const budget = new ErrorBudget()
+budget.slo = 99.9
+budget.window = 30 * 24 * 60 * 60 // 30 days in seconds
+
+// Allowed downtime: ~43 minutes per month
+console.log(budget.calculateBudget()) // 2,592 seconds (~43 min)
+```
+
+### Error Budget Policy
+
+```typescript
+interface ErrorBudgetPolicy {
+  onBudgetExhausted: Action[]
+  onBudgetWarning: Action[]
+  onBudgetHealthy: Action[]
+}
+
+const policy: ErrorBudgetPolicy = {
+  onBudgetExhausted: [
+    'Freeze feature releases',
+    'Focus on reliability',
+    'Cancel non-critical deployments',
+    'Conduct incident review'
+  ],
+  
+  onBudgetWarning: [
+    'Increase monitoring',
+    'Review upcoming changes',
+    'Prepare rollback plans'
+  ],
+  
+  onBudgetHealthy: [
+    'Continue normal operations',
+    'Consider new features',
+    'Controlled experiments OK'
+  ]
+}
+```
+
+## Toil Reduction
+
+### What is Toil?
+
+Toil is manual, repetitive, automatable work that doesn't provide lasting value.
+
+```typescript
+// Toil characteristics
+interface Toil {
+  isManual: boolean
+  isRepetitive: boolean
+  isAutomatable: boolean
+  hasNoValue: boolean // No enduring value
+  scalesLinearly: boolean // O(n) with service growth
+}
+
+// Example: Manual deployment toil
+const manualDeployment: Toil = {
+  isManual: true, // Someone SSH's into servers
+  isRepetitive: true, // Same steps every time
+  isAutomatable: true, // Could be scripted/automated
+  hasNoValue: true, // Doesn't improve the service
+  scalesLinearly: true // More services = more manual work
+}
+
+// Solution: Automate!
+async function automatedDeploy(service: string, version: string) {
+  await runTests()
+  await buildImage(version)
+  await pushToRegistry()
+  await updateKubernetes(service, version)
+  await waitForRollout()
+  await runSmokeTests()
+}
+```
+
+### Toil Budget
+
+```typescript
+// SRE teams should spend < 50% time on toil
+interface ToilTracking {
+  totalHours: number
+  toilHours: number
+  engineeringHours: number
+  
+  getToilPercentage(): number {
+    return (this.toilHours / this.totalHours) * 100
+  }
+}
+
+const teamToil: ToilTracking = {
+  totalHours: 160, // 1 month
+  toilHours: 60,
+  engineeringHours: 100,
+  
+  getToilPercentage() {
+    return (this.toilHours / this.totalHours) * 100 // 37.5%
+  }
+}
+```
+
+## Monitoring & Alerting
+
+### The Four Golden Signals
+
+```typescript
+interface GoldenSignals {
+  // 1. Latency
+  latency: {
+    p50: number
+    p95: number
+    p99: number
+  }
+  
+  // 2. Traffic
+  traffic: {
+    requestsPerSecond: number
+    activeUsers: number
+  }
+  
+  // 3. Errors
+  errors: {
+    errorRate: number
+    errorCount: number
+  }
+  
+  // 4. Saturation
+  saturation: {
+    cpuUtilization: number
+    memoryUtilization: number
+    diskUtilization: number
+  }
+}
+
+// Implementing metrics collection
+class MetricsCollector {
+  async collectGoldenSignals(): Promise<GoldenSignals> {
+    return {
+      latency: await this.getLatencyMetrics(),
+      traffic: await this.getTrafficMetrics(),
+      errors: await this.getErrorMetrics(),
+      saturation: await this.getSaturationMetrics()
+    }
+  }
+  
+  private async getLatencyMetrics() {
+    // Query Prometheus/monitoring system
+    return {
+      p50: await this.query('histogram_quantile(0.5, http_request_duration_seconds)'),
+      p95: await this.query('histogram_quantile(0.95, http_request_duration_seconds)'),
+      p99: await this.query('histogram_quantile(0.99, http_request_duration_seconds)')
+    }
+  }
+}
+```
+
+### Alert Design
+
+```typescript
+interface Alert {
+  name: string
+  condition: string
+  severity: 'critical' | 'warning' | 'info'
+  notify: string[]
+  runbook: string
+}
+
+// Good alert example
+const goodAlert: Alert = {
+  name: 'High Error Rate',
+  condition: 'error_rate > 0.01 for 5 minutes', // Clear threshold
+  severity: 'critical',
+  notify: ['pagerduty', 'slack-incidents'],
+  runbook: 'https://wiki.example.com/runbooks/high-error-rate'
+}
+
+// Alert best practices
+const alertRules = {
+  // Use symptom-based alerts
+  symptom: {
+    good: 'error_rate > 1%',
+    bad: 'server_down' // This is a cause, not symptom
+  },
+  
+  // Include duration to reduce noise
+  duration: {
+    good: 'latency > 1s for 5 minutes',
+    bad: 'latency > 1s' // Too noisy
+  },
+  
+  // Link to runbooks
+  actionable: {
+    good: 'runbook: https://wiki.example.com/runbooks/...',
+    bad: 'No runbook provided'
+  }
+}
+```
+
+## Incident Management
+
+### Incident Lifecycle
+
+```typescript
+type IncidentStatus = 
+  | 'detected'
+  | 'acknowledged'
+  | 'investigating'
+  | 'identified'
+  | 'resolved'
+  | 'closed'
+
+interface Incident {
+  id: string
+  title: string
+  severity: 'sev1' | 'sev2' | 'sev3'
+  status: IncidentStatus
+  startedAt: Date
+  resolvedAt?: Date
+  commander: string
+  responders: string[]
+  timeline: TimelineEvent[]
+  impactedServices: string[]
+  customerImpact: string
+}
+
+// Incident roles
+interface IncidentRoles {
+  commander: {
+    responsibilities: [
+      'Coordinate response',
+      'Make decisions',
+      'Communicate status',
+      'Delegate tasks'
+    ]
+  }
+  
+  communicator: {
+    responsibilities: [
+      'Update stakeholders',
+      'Post status updates',
+      'Manage external comms'
+    ]
+  }
+  
+  scribe: {
+    responsibilities: [
+      'Document timeline',
+      'Record decisions',
+      'Track action items'
+    ]
+  }
+  
+  responders: {
+    responsibilities: [
+      'Investigate issues',
+      'Implement fixes',
+      'Monitor impact'
+    ]
+  }
+}
+```
+
+### Incident Response Process
+
+```typescript
+class IncidentResponse {
+  async handleIncident(incident: Incident) {
+    // 1. Detect & Alert
+    await this.page(incident.severity)
+    
+    // 2. Triage
+    await this.assessSeverity(incident)
+    await this.assembleTeam(incident)
+    
+    // 3. Investigate
+    await this.gatherData(incident)
+    await this.formHypothesis(incident)
+    
+    // 4. Mitigate
+    await this.implementFix(incident)
+    await this.verifyResolution(incident)
+    
+    // 5. Resolve
+    await this.declareResolved(incident)
+    
+    // 6. Follow-up
+    await this.schedulePostMortem(incident)
+    await this.trackActionItems(incident)
+  }
+  
+  private async assessSeverity(incident: Incident) {
+    // SEV1: Critical user impact, all hands on deck
+    // SEV2: Significant impact, page on-call
+    // SEV3: Minor impact, can wait for business hours
+    
+    const severity = this.calculateSeverity({
+      userImpact: incident.impactedServices.length,
+      revenueImpact: await this.estimateRevenueLoss(incident),
+      dataLoss: incident.dataLoss
+    })
+    
+    incident.severity = severity
+  }
+}
+```
+
+## Capacity Planning
+
+### Demand Forecasting
+
+```typescript
+interface CapacityPlan {
+  service: string
+  currentCapacity: number
+  projectedDemand: number
+  timeHorizon: string
+  recommendations: Action[]
+}
+
+class CapacityPlanner {
+  async forecastDemand(service: string): Promise<CapacityPlan> {
+    // Historical data
+    const historicalGrowth = await this.getGrowthRate(service)
+    
+    // Current usage
+    const currentUsage = await this.getCurrentUsage(service)
+    
+    // Project future demand
+    const projection = this.projectDemand(
+      currentUsage,
+      historicalGrowth,
+      { months: 6 }
+    )
+    
+    // Calculate headroom
+    const currentCapacity = await this.getCapacity(service)
+    const utilizationTarget = 0.70 // 70% utilization target
+    
+    if (projection.peak > currentCapacity * utilizationTarget) {
+      return {
+        service,
+        currentCapacity,
+        projectedDemand: projection.peak,
+        timeHorizon: '6 months',
+        recommendations: [
+          'Scale horizontally: Add 3 more instances',
+          'Estimated cost: $500/month',
+          'Implementation timeline: 2 weeks'
+        ]
+      }
+    }
+  }
+  
+  private projectDemand(
+    current: number,
+    growthRate: number,
+    horizon: { months: number }
+  ) {
+    // Simple exponential growth model
+    const projected = current * Math.pow(1 + growthRate, horizon.months)
+    
+    // Add seasonal variations
+    const seasonal = this.getSeasonalFactors(horizon.months)
+    
+    return {
+      average: projected,
+      peak: projected * seasonal.peakFactor,
+      low: projected * seasonal.lowFactor
+    }
+  }
+}
+```
+
+### Load Testing
+
+```typescript
+// k6 load test script
+import http from 'k6/http'
+import { check, sleep } from 'k6'
+import { Rate } from 'k6/metrics'
+
+const errorRate = new Rate('errors')
+
+export const options = {
+  stages: [
+    { duration: '2m', target: 100 }, // Ramp up
+    { duration: '5m', target: 100 }, // Stay at 100 users
+    { duration: '2m', target: 200 }, // Ramp to 200
+    { duration: '5m', target: 200 }, // Stay at 200
+    { duration: '2m', target: 0 },   // Ramp down
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'], // 95% under 500ms
+    errors: ['rate<0.1'],             // Error rate < 10%
+  }
+}
+
+export default function() {
+  const res = http.get('https://api.example.com/users')
+  
+  const success = check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500
+  })
+  
+  errorRate.add(!success)
+  sleep(1)
+}
+```
+
+## Reliability Patterns
+
+### Circuit Breaker
+
+```typescript
+class CircuitBreaker {
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
+  private failures = 0
+  private lastFailureTime = 0
+  private threshold = 5
+  private timeout = 60000 // 1 minute
+  
+  async call<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = 'HALF_OPEN'
+      } else {
+        throw new Error('Circuit breaker is OPEN')
+      }
+    }
+    
+    try {
+      const result = await fn()
+      this.onSuccess()
+      return result
+    } catch (error) {
+      this.onFailure()
+      throw error
+    }
+  }
+  
+  private onSuccess() {
+    this.failures = 0
+    if (this.state === 'HALF_OPEN') {
+      this.state = 'CLOSED'
+    }
+  }
+  
+  private onFailure() {
+    this.failures++
+    this.lastFailureTime = Date.now()
+    
+    if (this.failures >= this.threshold) {
+      this.state = 'OPEN'
+    }
+  }
+}
+```
+
+### Retry with Exponential Backoff
+
+```typescript
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (i === maxRetries - 1) throw error
+      
+      // Exponential backoff with jitter
+      const delay = baseDelay * Math.pow(2, i)
+      const jitter = Math.random() * 1000
+      
+      await new Promise(resolve => setTimeout(resolve, delay + jitter))
+    }
+  }
+  
+  throw new Error('Max retries exceeded')
+}
+
+// Usage
+const data = await retryWithBackoff(() => 
+  fetch('https://api.example.com/data')
+)
+```
+
+### Bulkhead Pattern
+
+```typescript
+// Isolate resources to prevent cascading failures
+class Bulkhead {
+  private pools: Map<string, ResourcePool> = new Map()
+  
+  createPool(name: string, maxSize: number) {
+    this.pools.set(name, new ResourcePool(maxSize))
+  }
+  
+  async execute<T>(
+    poolName: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const pool = this.pools.get(poolName)
+    if (!pool) throw new Error(`Pool ${poolName} not found`)
+    
+    return pool.execute(fn)
+  }
+}
+
+class ResourcePool {
+  private active = 0
+  
+  constructor(private maxSize: number) {}
+  
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.active >= this.maxSize) {
+      throw new Error('Pool exhausted')
+    }
+    
+    this.active++
+    try {
+      return await fn()
+    } finally {
+      this.active--
+    }
+  }
+}
+
+// Usage: Separate pools for different operations
+const bulkhead = new Bulkhead()
+bulkhead.createPool('database', 10)
+bulkhead.createPool('external-api', 5)
+
+await bulkhead.execute('database', () => db.query('...'))
+await bulkhead.execute('external-api', () => fetch('...'))
+```
+
+## On-Call Practices
+
+### On-Call Rotation
+
+```typescript
+interface OnCallSchedule {
+  primary: string
+  secondary: string
+  startTime: Date
+  endTime: Date
+  escalationPolicy: EscalationPolicy
+}
+
+interface EscalationPolicy {
+  levels: Array<{
+    waitMinutes: number
+    notify: string[]
+  }>
+}
+
+const schedule: OnCallSchedule = {
+  primary: 'alice@example.com',
+  secondary: 'bob@example.com',
+  startTime: new Date('2024-01-01T00:00:00Z'),
+  endTime: new Date('2024-01-08T00:00:00Z'),
+  escalationPolicy: {
+    levels: [
+      { waitMinutes: 5, notify: ['primary'] },
+      { waitMinutes: 10, notify: ['secondary'] },
+      { waitMinutes: 15, notify: ['manager'] },
+      { waitMinutes: 30, notify: ['director'] }
+    ]
+  }
+}
+```
+
+### Runbooks
+
+```markdown
+# Runbook: High API Error Rate
+
+## Alert
+`error_rate > 1% for 5 minutes`
+
+## Impact
+- Users unable to complete purchases
+- Revenue loss: ~$1000/minute
+
+## Investigation Steps
+
+1. Check error dashboard
+   ```
+   https://grafana.example.com/d/api-errors
+   ```
+
+2. Identify error type
+   ```bash
+   kubectl logs -l app=api --tail=100 | grep ERROR
+   ```
+
+3. Check recent deployments
+   ```bash
+   kubectl rollout history deployment/api
+   ```
+
+## Common Causes
+
+### 1. Database Connection Pool Exhausted
+**Symptoms:** Timeout errors, connection refused
+**Fix:**
+```bash
+# Scale up connection pool
+kubectl set env deployment/api DB_POOL_SIZE=50
+```
+
+### 2. Downstream Service Failure
+**Symptoms:** 503 errors, gateway timeout
+**Fix:**
+```bash
+# Enable circuit breaker
+kubectl set env deployment/api CIRCUIT_BREAKER=true
+```
+
+### 3. Bad Deployment
+**Symptoms:** Errors started after deployment
+**Fix:**
+```bash
+# Rollback to previous version
+kubectl rollout undo deployment/api
+```
+
+## Escalation
+If not resolved in 15 minutes, escalate to #incident-critical
+
+## Post-Incident
+Schedule post-mortem within 48 hours
+```
+
+## Chaos Engineering
+
+```typescript
+// Chaos experiment framework
+interface ChaosExperiment {
+  name: string
+  hypothesis: string
+  method: () => Promise<void>
+  rollback: () => Promise<void>
+  steadyState: () => Promise<boolean>
+}
+
+const latencyExperiment: ChaosExperiment = {
+  name: 'API Latency Injection',
+  
+  hypothesis: 'System remains stable with 200ms added latency',
+  
+  async method() {
+    // Inject latency
+    await fetch('http://chaos-mesh/inject-latency', {
+      method: 'POST',
+      body: JSON.stringify({
+        target: 'api-service',
+        latency: '200ms',
+        percentage: 50
+      })
+    })
+  },
+  
+  async rollback() {
+    // Remove latency injection
+    await fetch('http://chaos-mesh/remove-latency', {
+      method: 'POST'
+    })
+  },
+  
+  async steadyState() {
+    // Check if system is healthy
+    const metrics = await fetch('http://metrics/health')
+    const data = await metrics.json()
+    
+    return (
+      data.errorRate < 0.01 &&
+      data.p95Latency < 500
+    )
+  }
+}
+
+// Run experiment
+async function runChaosExperiment(experiment: ChaosExperiment) {
+  // 1. Verify steady state
+  const initialState = await experiment.steadyState()
+  if (!initialState) throw new Error('System not in steady state')
+  
+  try {
+    // 2. Inject failure
+    await experiment.method()
+    
+    // 3. Monitor system
+    await new Promise(resolve => setTimeout(resolve, 60000)) // 1 minute
+    
+    // 4. Verify hypothesis
+    const finalState = await experiment.steadyState()
+    
+    if (finalState) {
+      console.log('✅ Hypothesis validated')
+    } else {
+      console.log('❌ Hypothesis rejected - system degraded')
+    }
+  } finally {
+    // 5. Always rollback
+    await experiment.rollback()
+  }
+}
+```
+
+## SRE Metrics
+
+```typescript
+interface SREMetrics {
+  // Availability
+  uptime: number // percentage
+  
+  // Performance
+  p50Latency: number
+  p95Latency: number
+  p99Latency: number
+  
+  // Reliability
+  mtbf: number // Mean Time Between Failures
+  mttr: number // Mean Time To Recovery
+  
+  // Toil
+  toilPercentage: number
+  
+  // Error budget
+  errorBudgetRemaining: number
+}
+
+class SREDashboard {
+  async generateReport(): Promise<SREMetrics> {
+    return {
+      uptime: await this.calculateUptime(),
+      p50Latency: await this.getLatency(0.50),
+      p95Latency: await this.getLatency(0.95),
+      p99Latency: await this.getLatency(0.99),
+      mtbf: await this.calculateMTBF(),
+      mttr: await this.calculateMTTR(),
+      toilPercentage: await this.calculateToil(),
+      errorBudgetRemaining: await this.getRemainingBudget()
+    }
+  }
+}
+```
+
+## Best Practices
+
+### Do
+✅ Define clear SLOs and SLIs
+✅ Maintain error budgets
+✅ Automate toil away
+✅ Write comprehensive runbooks
+✅ Practice incident response
+✅ Conduct blameless post-mortems
+✅ Invest in monitoring and observability
+✅ Plan for capacity
+
+### Don't
+❌ Ignore error budgets
+❌ Alert on everything
+❌ Skip runbook documentation
+❌ Blame individuals for incidents
+❌ Reactive capacity planning
+❌ Manual toil > 50% of time
+❌ Deploy without rollback plans
+❌ Ignore SLO violations
+
+## Tools
+
+- **Monitoring**: Prometheus, Grafana, Datadog
+- **Alerting**: PagerDuty, Opsgenie, AlertManager
+- **Incident Management**: Incident.io, Jira
+- **Chaos Engineering**: Chaos Mesh, Gremlin
+- **Load Testing**: k6, Gatling, Locust
+- **Observability**: OpenTelemetry, Jaeger, Zipkin
+

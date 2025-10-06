@@ -1,0 +1,47 @@
+---
+title: Feature Flags
+description: Control feature rollouts and experimentation with feature flags
+---
+
+# Feature Flags
+
+Feature flags (feature toggles) enable you to deploy code but control when and to whom features are released.
+
+## What are Feature Flags?
+
+A feature flag is a conditional statement that controls whether code is executed or not.
+
+```typescript
+if (featureFlag.isEnabled('new-checkout')) {
+  return <NewCheckout />
+} else {
+  return <OldCheckout />
+}
+```
+
+## Types of Feature Flags
+
+- **Release flags**: Control feature rollout
+- **Experiment flags**: A/B testing
+- **Ops flags**: Circuit breakers, kill switches
+- **Permission flags**: User-based access
+
+## Basic Implementation
+
+```typescript
+interface FeatureFlag {
+  name: string
+  enabled: boolean
+  rollout?: number // 0-100%
+  users?: string[]
+}
+```
+
+## Tools
+
+- LaunchDarkly
+- Split.io
+- Flagsmith
+- Unleash
+- PostHog
+

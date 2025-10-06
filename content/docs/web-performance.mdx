@@ -1,0 +1,776 @@
+---
+title: Web Performance
+description: Advanced web performance optimization techniques and strategies
+---
+
+# Web Performance
+
+Web performance is critical for user experience, SEO, and business metrics. Every 100ms delay can reduce conversion by 7%.
+
+## Performance Metrics
+
+### Core Web Vitals
+
+#### Largest Contentful Paint (LCP)
+**Target: < 2.5 seconds**
+
+Measures loading performance - when the largest content element becomes visible.
+
+```typescript
+// Monitor LCP
+import { onLCP } from 'web-vitals'
+
+onLCP((metric) => {
+  console.log('LCP:', metric.value)
+  
+  // Send to analytics
+  gtag('event', 'web_vitals', {
+    event_category: 'Web Vitals',
+    event_label: metric.id,
+    value: Math.round(metric.value),
+    metric_name: 'LCP'
+  })
+})
+```
+
+**Optimization:**
+```typescript
+// Preload LCP image
+<link rel="preload" as="image" href="/hero.jpg" />
+
+// Priority hint
+<img src="/hero.jpg" fetchpriority="high" />
+
+// Next.js Image with priority
+<Image src="/hero.jpg" priority />
+```
+
+#### First Input Delay (FID)
+**Target: < 100 milliseconds**
+
+Measures interactivity - time from first user interaction to browser response.
+
+```typescript
+import { onFID } from 'web-vitals'
+
+onFID((metric) => {
+  console.log('FID:', metric.value)
+})
+```
+
+**Optimization:**
+```typescript
+// Code splitting
+const HeavyComponent = lazy(() => import('./HeavyComponent'))
+
+// Defer non-critical scripts
+<script src="analytics.js" defer />
+
+// Break up long tasks
+async function processLargeDataset(data: any[]) {
+  for (let i = 0; i < data.length; i += 100) {
+    await scheduler.yield() // Yield to browser
+    processChunk(data.slice(i, i + 100))
+  }
+}
+```
+
+#### Cumulative Layout Shift (CLS)
+**Target: < 0.1**
+
+Measures visual stability - unexpected layout shifts.
+
+```typescript
+import { onCLS } from 'web-vitals'
+
+onCLS((metric) => {
+  console.log('CLS:', metric.value)
+})
+```
+
+**Optimization:**
+```tsx
+// Always include dimensions
+<img 
+  src="/product.jpg" 
+  width={400} 
+  height={300} 
+  alt="Product" 
+/>
+
+// Reserve space for dynamic content
+<div style={{ minHeight: '200px' }}>
+  {content || <Skeleton />}
+</div>
+
+// Font loading
+<link
+  rel="preload"
+  href="/fonts/inter.woff2"
+  as="font"
+  type="font/woff2"
+  crossOrigin="anonymous"
+/>
+```
+
+### Additional Metrics
+
+#### Time to First Byte (TTFB)
+```typescript
+import { onTTFB } from 'web-vitals'
+
+onTTFB((metric) => {
+  console.log('TTFB:', metric.value)
+})
+
+// Optimize TTFB
+// - Use CDN
+// - Enable HTTP/2 or HTTP/3
+// - Optimize server response time
+// - Use edge caching
+```
+
+#### First Contentful Paint (FCP)
+```typescript
+import { onFCP } from 'web-vitals'
+
+onFCP((metric) => {
+  console.log('FCP:', metric.value)
+})
+```
+
+#### Interaction to Next Paint (INP)
+```typescript
+import { onINP } from 'web-vitals'
+
+onINP((metric) => {
+  console.log('INP:', metric.value)
+})
+```
+
+## Critical Rendering Path
+
+### Optimization Steps
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Critical CSS inline -->
+  <style>
+    /* Above-the-fold styles */
+    .header { /* ... */ }
+    .hero { /* ... */ }
+  </style>
+  
+  <!-- Preconnect to external domains -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://api.example.com">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" crossorigin>
+  <link rel="preload" href="/hero.jpg" as="image">
+  
+  <!-- DNS prefetch for later resources -->
+  <link rel="dns-prefetch" href="https://analytics.example.com">
+</head>
+<body>
+  <!-- Content -->
+  
+  <!-- Load non-critical CSS -->
+  <link rel="stylesheet" href="/styles.css" media="print" onload="this.media='all'">
+  
+  <!-- Defer JavaScript -->
+  <script src="/app.js" defer></script>
+</body>
+</html>
+```
+
+## JavaScript Performance
+
+### Code Splitting
+
+```typescript
+// Route-based splitting
+const Dashboard = lazy(() => import('./Dashboard'))
+const Settings = lazy(() => import('./Settings'))
+
+function App() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  )
+}
+
+// Component-based splitting
+const Chart = lazy(() => import('./Chart'))
+
+function Analytics() {
+  const [showChart, setShowChart] = useState(false)
+  
+  return (
+    <div>
+      <button onClick={() => setShowChart(true)}>
+        Show Chart
+      </button>
+      {showChart && (
+        <Suspense fallback={<Spinner />}>
+          <Chart />
+        </Suspense>
+      )}
+    </div>
+  )
+}
+```
+
+### Tree Shaking
+
+```typescript
+// ❌ Imports entire library
+import _ from 'lodash'
+
+// ✅ Import only what you need
+import { debounce } from 'lodash-es'
+
+// ✅ Or use individual packages
+import debounce from 'lodash.debounce'
+```
+
+### Bundle Analysis
+
+```bash
+# Next.js
+ANALYZE=true npm run build
+
+# Webpack
+npm install -D webpack-bundle-analyzer
+```
+
+```javascript
+// webpack.config.js
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+
+module.exports = {
+  plugins: [
+    new BundleAnalyzerPlugin()
+  ]
+}
+```
+
+## Image Optimization
+
+### Modern Formats
+
+```tsx
+<picture>
+  <source srcSet="/hero.avif" type="image/avif" />
+  <source srcSet="/hero.webp" type="image/webp" />
+  <img src="/hero.jpg" alt="Hero image" />
+</picture>
+```
+
+### Responsive Images
+
+```tsx
+<img
+  src="/small.jpg"
+  srcSet="
+    /small.jpg 400w,
+    /medium.jpg 800w,
+    /large.jpg 1200w
+  "
+  sizes="
+    (max-width: 400px) 100vw,
+    (max-width: 800px) 50vw,
+    33vw
+  "
+  alt="Responsive image"
+/>
+```
+
+### Lazy Loading
+
+```tsx
+// Native lazy loading
+<img src="/image.jpg" loading="lazy" alt="Lazy loaded" />
+
+// Intersection Observer
+function LazyImage({ src, alt }: { src: string; alt: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImageSrc(src)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '50px' }
+    )
+    
+    if (imgRef.current) {
+      observer.observe(imgRef.current)
+    }
+    
+    return () => observer.disconnect()
+  }, [src])
+  
+  return (
+    <img
+      ref={imgRef}
+      src={imageSrc || undefined}
+      alt={alt}
+      style={{ backgroundColor: '#f0f0f0' }}
+    />
+  )
+}
+```
+
+### Image CDN
+
+```typescript
+// Imgix, Cloudinary, or custom CDN
+function optimizedImage(url: string, options: ImageOptions) {
+  const params = new URLSearchParams({
+    w: options.width.toString(),
+    h: options.height?.toString() || '',
+    q: options.quality?.toString() || '80',
+    fm: options.format || 'auto',
+    fit: options.fit || 'crop'
+  })
+  
+  return `https://cdn.example.com/${url}?${params}`
+}
+
+// Usage
+<img src={optimizedImage('hero.jpg', { width: 800, format: 'webp' })} />
+```
+
+## Font Optimization
+
+### Font Loading Strategies
+
+```css
+/* font-display values */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter.woff2') format('woff2');
+  
+  /* Show fallback, swap when loaded */
+  font-display: swap;
+  
+  /* OR: Block briefly, swap after */
+  font-display: block;
+  
+  /* OR: Show fallback, optional font */
+  font-display: optional;
+}
+```
+
+### Variable Fonts
+
+```css
+@font-face {
+  font-family: 'Inter Variable';
+  src: url('/fonts/inter-var.woff2') format('woff2-variations');
+  font-weight: 100 900; /* Full weight range */
+  font-display: swap;
+}
+
+.text {
+  font-family: 'Inter Variable';
+  font-weight: 450; /* Any value between 100-900 */
+}
+```
+
+### Subsetting
+
+```bash
+# Create subset with only Latin characters
+pyftsubset font.ttf \
+  --output-file=font-subset.woff2 \
+  --flavor=woff2 \
+  --layout-features=* \
+  --unicodes=U+0000-00FF
+```
+
+## Caching Strategies
+
+### HTTP Caching
+
+```typescript
+// Next.js API Route
+export async function GET() {
+  return new Response(JSON.stringify(data), {
+    headers: {
+      // Cache for 1 hour, revalidate in background
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      
+      // Or: No cache
+      'Cache-Control': 'no-store',
+      
+      // Or: Cache with must revalidate
+      'Cache-Control': 'public, max-age=3600, must-revalidate'
+    }
+  })
+}
+```
+
+### Service Worker Caching
+
+```typescript
+// sw.js
+const CACHE_NAME = 'v1'
+const STATIC_ASSETS = [
+  '/',
+  '/styles.css',
+  '/app.js',
+  '/logo.svg'
+]
+
+// Install
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+  )
+})
+
+// Fetch - Network falling back to cache
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        const responseClone = response.clone()
+        caches.open(CACHE_NAME)
+          .then(cache => cache.put(event.request, responseClone))
+        return response
+      })
+      .catch(() => caches.match(event.request))
+  )
+})
+```
+
+## Resource Hints
+
+```html
+<!-- Preconnect: Establish early connection -->
+<link rel="preconnect" href="https://api.example.com">
+
+<!-- DNS Prefetch: Resolve DNS early -->
+<link rel="dns-prefetch" href="https://analytics.example.com">
+
+<!-- Preload: Fetch critical resource -->
+<link rel="preload" href="/hero.jpg" as="image">
+<link rel="preload" href="/font.woff2" as="font" crossorigin>
+
+<!-- Prefetch: Fetch for next navigation -->
+<link rel="prefetch" href="/next-page.js">
+
+<!-- Prerender: Render next page (use sparingly) -->
+<link rel="prerender" href="/dashboard">
+
+<!-- Module Preload: Preload ES modules -->
+<link rel="modulepreload" href="/app.js">
+```
+
+## React Performance
+
+### Memoization
+
+```typescript
+// useMemo for expensive calculations
+function ExpensiveList({ items, filter }: Props) {
+  const filteredItems = useMemo(() => {
+    console.log('Filtering items...')
+    return items.filter(item => item.category === filter)
+  }, [items, filter])
+  
+  return <List items={filteredItems} />
+}
+
+// useCallback for function props
+function Parent() {
+  const [count, setCount] = useState(0)
+  
+  const handleClick = useCallback(() => {
+    console.log('Button clicked')
+  }, []) // No dependencies = never changes
+  
+  return <ExpensiveChild onClick={handleClick} />
+}
+
+// React.memo for component memoization
+const ExpensiveChild = memo(({ onClick }: Props) => {
+  console.log('Rendering ExpensiveChild')
+  return <button onClick={onClick}>Click me</button>
+})
+```
+
+### Virtual Scrolling
+
+```typescript
+import { FixedSizeList } from 'react-window'
+
+function VirtualList({ items }: { items: Item[] }) {
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={items.length}
+      itemSize={50}
+      width="100%"
+    >
+      {({ index, style }) => (
+        <div style={style}>
+          {items[index].name}
+        </div>
+      )}
+    </FixedSizeList>
+  )
+}
+```
+
+### Concurrent Features
+
+```typescript
+// useTransition for non-urgent updates
+function SearchResults() {
+  const [query, setQuery] = useState('')
+  const [isPending, startTransition] = useTransition()
+  
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // Urgent: Update input
+    setQuery(e.target.value)
+    
+    // Non-urgent: Update results
+    startTransition(() => {
+      setSearchResults(search(e.target.value))
+    })
+  }
+  
+  return (
+    <>
+      <input value={query} onChange={handleChange} />
+      {isPending && <Spinner />}
+      <Results />
+    </>
+  )
+}
+
+// useDeferredValue for deferred updates
+function FilteredList({ items, filter }: Props) {
+  const deferredFilter = useDeferredValue(filter)
+  
+  const filtered = useMemo(() => {
+    return items.filter(item => item.includes(deferredFilter))
+  }, [items, deferredFilter])
+  
+  return <List items={filtered} />
+}
+```
+
+## Network Optimization
+
+### Request Optimization
+
+```typescript
+// Parallel requests
+const [users, posts, comments] = await Promise.all([
+  fetch('/api/users'),
+  fetch('/api/posts'),
+  fetch('/api/comments')
+])
+
+// Request deduplication
+const cache = new Map()
+
+async function fetchWithCache(url: string) {
+  if (cache.has(url)) {
+    return cache.get(url)
+  }
+  
+  const promise = fetch(url).then(r => r.json())
+  cache.set(url, promise)
+  
+  return promise
+}
+
+// Debounced requests
+import { debounce } from 'lodash-es'
+
+const searchDebounced = debounce(async (query: string) => {
+  const results = await fetch(`/api/search?q=${query}`)
+  // ...
+}, 300)
+```
+
+### Compression
+
+```typescript
+// Enable compression in Next.js
+// next.config.js
+module.exports = {
+  compress: true, // Enables gzip
+}
+
+// Express
+import compression from 'compression'
+app.use(compression())
+
+// Custom Brotli compression
+import { brotliCompress } from 'zlib'
+
+const compressed = await new Promise((resolve, reject) => {
+  brotliCompress(buffer, (err, result) => {
+    if (err) reject(err)
+    else resolve(result)
+  })
+})
+```
+
+## Performance Monitoring
+
+### Real User Monitoring (RUM)
+
+```typescript
+// Custom performance tracking
+class PerformanceTracker {
+  private metrics: Map<string, number> = new Map()
+  
+  mark(name: string) {
+    performance.mark(name)
+  }
+  
+  measure(name: string, startMark: string, endMark: string) {
+    performance.measure(name, startMark, endMark)
+    const measure = performance.getEntriesByName(name)[0]
+    this.metrics.set(name, measure.duration)
+    
+    // Send to analytics
+    this.sendToAnalytics(name, measure.duration)
+  }
+  
+  private sendToAnalytics(name: string, duration: number) {
+    navigator.sendBeacon('/analytics', JSON.stringify({
+      metric: name,
+      duration,
+      timestamp: Date.now()
+    }))
+  }
+}
+
+// Usage
+const tracker = new PerformanceTracker()
+
+tracker.mark('api-call-start')
+await fetchData()
+tracker.mark('api-call-end')
+tracker.measure('api-call', 'api-call-start', 'api-call-end')
+```
+
+### Performance Budget
+
+```javascript
+// webpack.config.js
+module.exports = {
+  performance: {
+    maxEntrypointSize: 250000, // 250kb
+    maxAssetSize: 100000, // 100kb
+    hints: 'error' // or 'warning'
+  }
+}
+```
+
+## Performance Testing
+
+### Lighthouse CI
+
+```yaml
+# .github/workflows/lighthouse.yml
+name: Lighthouse CI
+on: [push]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          urls: |
+            https://example.com
+            https://example.com/about
+          budgetPath: ./budget.json
+          uploadArtifacts: true
+```
+
+```json
+// budget.json
+{
+  "budget": [
+    {
+      "path": "/*",
+      "timings": [
+        {
+          "metric": "interactive",
+          "budget": 3000
+        },
+        {
+          "metric": "first-contentful-paint",
+          "budget": 1000
+        }
+      ],
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 300
+        },
+        {
+          "resourceType": "image",
+          "budget": 500
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Best Practices
+
+### Do
+✅ Measure before optimizing
+✅ Set performance budgets
+✅ Monitor real user metrics
+✅ Optimize images and fonts
+✅ Use code splitting
+✅ Implement caching strategies
+✅ Minimize third-party scripts
+✅ Use modern formats (AVIF, WebP)
+
+### Don't
+❌ Premature optimization
+❌ Ignore Core Web Vitals
+❌ Load everything upfront
+❌ Use large frameworks unnecessarily
+❌ Block the main thread
+❌ Skip compression
+❌ Forget mobile performance
+❌ Ignore analytics
+
+## Tools
+
+- **Lighthouse**: Performance auditing
+- **WebPageTest**: Detailed performance testing
+- **Chrome DevTools**: Profiling and debugging
+- **Bundle Analyzers**: Webpack, Next.js
+- **Web Vitals**: Google's metrics library
+- **SpeedCurve**: Performance monitoring
+- **Calibre**: Performance tracking
+

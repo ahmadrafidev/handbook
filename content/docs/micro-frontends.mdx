@@ -1,0 +1,682 @@
+---
+title: Micro-frontends
+description: Building scalable frontend architectures with independent, deployable modules
+---
+
+# Micro-frontends
+
+Micro-frontends extend microservice concepts to frontend development, allowing teams to work independently on different parts of the application.
+
+## What are Micro-frontends?
+
+An architectural pattern where a frontend app is decomposed into individual, semi-independent "microapps" working together.
+
+### Key Characteristics
+- **Independent deployment** - Deploy parts of the frontend independently
+- **Team autonomy** - Different teams own different features
+- **Technology agnostic** - Mix React, Vue, Angular, etc.
+- **Isolated codebases** - Separate repositories or monorepo
+
+## Implementation Approaches
+
+### 1. Module Federation (Webpack 5)
+
+```javascript
+// host/webpack.config.js
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'host',
+      remotes: {
+        productApp: 'productApp@http://localhost:3001/remoteEntry.js',
+        cartApp: 'cartApp@http://localhost:3002/remoteEntry.js'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+}
+
+// remote/webpack.config.js
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'productApp',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './ProductList': './src/ProductList',
+        './ProductDetail': './src/ProductDetail'
+      },
+      shared: {
+        react: { singleton: true },
+        'react-dom': { singleton: true }
+      }
+    })
+  ]
+}
+```
+
+#### Using Remote Components
+```tsx
+// host/src/App.tsx
+import React, { lazy, Suspense } from 'react'
+
+const ProductList = lazy(() => import('productApp/ProductList'))
+const Cart = lazy(() => import('cartApp/Cart'))
+
+export default function App() {
+  return (
+    <div>
+      <header>My E-commerce App</header>
+      <Suspense fallback={<div>Loading...</div>}>
+        <ProductList />
+        <Cart />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+### 2. iframe-based Integration
+
+```tsx
+function IframeMicroFrontend({ src, title }: { src: string; title: string }) {
+  return (
+    <iframe
+      src={src}
+      title={title}
+      style={{
+        width: '100%',
+        height: '600px',
+        border: 'none'
+      }}
+      sandbox="allow-scripts allow-same-origin"
+    />
+  )
+}
+
+// Usage
+<IframeMicroFrontend 
+  src="https://products.example.com" 
+  title="Product Catalog" 
+/>
+```
+
+**Pros:**
+- Complete isolation
+- Technology independence
+- Style encapsulation
+
+**Cons:**
+- Performance overhead
+- Complex communication
+- SEO challenges
+- Poor UX (routing, history)
+
+### 3. Web Components
+
+```typescript
+// product-list.ts
+class ProductList extends HTMLElement {
+  connectedCallback() {
+    this.innerHTML = `
+      <div class="product-list">
+        <h2>Products</h2>
+        <ul id="products"></ul>
+      </div>
+    `
+    this.loadProducts()
+  }
+  
+  async loadProducts() {
+    const products = await fetch('/api/products').then(r => r.json())
+    const list = this.querySelector('#products')
+    list.innerHTML = products
+      .map(p => `<li>${p.name} - $${p.price}</li>`)
+      .join('')
+  }
+}
+
+customElements.define('product-list', ProductList)
+```
+
+```html
+<!-- Usage in any framework or vanilla HTML -->
+<product-list></product-list>
+```
+
+### 4. Single-SPA Framework
+
+```typescript
+// root-config.ts
+import { registerApplication, start } from 'single-spa'
+
+registerApplication({
+  name: '@myapp/navbar',
+  app: () => System.import('@myapp/navbar'),
+  activeWhen: '/'
+})
+
+registerApplication({
+  name: '@myapp/products',
+  app: () => System.import('@myapp/products'),
+  activeWhen: '/products'
+})
+
+registerApplication({
+  name: '@myapp/checkout',
+  app: () => System.import('@myapp/checkout'),
+  activeWhen: '/checkout'
+})
+
+start()
+```
+
+```typescript
+// product-app.tsx
+import React from 'react'
+import ReactDOM from 'react-dom'
+import singleSpaReact from 'single-spa-react'
+import ProductApp from './ProductApp'
+
+const lifecycles = singleSpaReact({
+  React,
+  ReactDOM,
+  rootComponent: ProductApp,
+  errorBoundary: (err, info, props) => {
+    return <div>Error loading products</div>
+  }
+})
+
+export const { bootstrap, mount, unmount } = lifecycles
+```
+
+## Communication Patterns
+
+### 1. Custom Events
+
+```typescript
+// Publishing events
+class EventBus {
+  publish(event: string, data: any) {
+    window.dispatchEvent(
+      new CustomEvent(event, { detail: data })
+    )
+  }
+  
+  subscribe(event: string, callback: (data: any) => void) {
+    const handler = (e: CustomEvent) => callback(e.detail)
+    window.addEventListener(event, handler)
+    
+    // Return unsubscribe function
+    return () => window.removeEventListener(event, handler)
+  }
+}
+
+export const eventBus = new EventBus()
+
+// Cart micro-frontend
+eventBus.publish('cart:item-added', {
+  productId: '123',
+  quantity: 1
+})
+
+// Navbar micro-frontend
+eventBus.subscribe('cart:item-added', (data) => {
+  updateCartCount(data.quantity)
+})
+```
+
+### 2. Shared State
+
+```typescript
+// Using a lightweight state manager
+import { create } from 'zustand'
+
+interface AppState {
+  user: User | null
+  cart: CartItem[]
+  setUser: (user: User) => void
+  addToCart: (item: CartItem) => void
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  user: null,
+  cart: [],
+  setUser: (user) => set({ user }),
+  addToCart: (item) => set((state) => ({
+    cart: [...state.cart, item]
+  }))
+}))
+
+// Any micro-frontend can use this
+const { cart, addToCart } = useAppStore()
+```
+
+### 3. Props and Callbacks
+
+```typescript
+// Parent passes props to micro-frontend
+<ProductList
+  onProductClick={(product) => navigateTo(`/product/${product.id}`)}
+  filters={currentFilters}
+/>
+```
+
+### 4. URL/Routing
+
+```typescript
+// Use URL as source of truth
+const productId = new URLSearchParams(window.location.search).get('productId')
+
+// Update URL to communicate
+window.history.pushState({}, '', `/products?category=${category}`)
+
+// Listen for changes
+window.addEventListener('popstate', () => {
+  // React to URL changes
+})
+```
+
+## Shared Dependencies
+
+### Version Management
+
+```javascript
+// webpack.config.js
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      shared: {
+        react: {
+          singleton: true,
+          requiredVersion: '^18.0.0',
+          strictVersion: false
+        },
+        'react-dom': {
+          singleton: true,
+          requiredVersion: '^18.0.0'
+        },
+        '@myapp/design-system': {
+          singleton: true,
+          version: '1.0.0'
+        }
+      }
+    })
+  ]
+}
+```
+
+### Design System Sharing
+
+```typescript
+// Shared design system package
+// @myapp/design-system/Button.tsx
+export function Button({ children, onClick, variant = 'primary' }) {
+  return (
+    <button 
+      className={`btn btn-${variant}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
+
+// All micro-frontends import from shared package
+import { Button } from '@myapp/design-system'
+```
+
+## Routing Strategies
+
+### Client-side Routing
+
+```typescript
+// App shell handles routing
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        <Route path="/products/*" element={<ProductApp />} />
+        <Route path="/checkout/*" element={<CheckoutApp />} />
+        <Route path="/account/*" element={<AccountApp />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+// Each micro-frontend handles its own sub-routes
+function ProductApp() {
+  return (
+    <Routes>
+      <Route path="/" element={<ProductList />} />
+      <Route path="/:id" element={<ProductDetail />} />
+      <Route path="/categories/:category" element={<CategoryView />} />
+    </Routes>
+  )
+}
+```
+
+### Server-side Routing
+
+```typescript
+// Next.js with micro-frontends
+// pages/products/[...slug].tsx
+export default function ProductsPage() {
+  return <ProductMicroFrontend />
+}
+
+// pages/checkout/[...slug].tsx
+export default function CheckoutPage() {
+  return <CheckoutMicroFrontend />
+}
+```
+
+## Deployment Strategies
+
+### Independent Deployment
+
+```yaml
+# GitHub Actions - Product micro-frontend
+name: Deploy Product App
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/product/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: npm run build
+        working-directory: apps/product
+      - name: Deploy to CDN
+        run: aws s3 sync dist/ s3://microfrontends/product/
+```
+
+### Version Management
+
+```javascript
+// Import specific version
+const ProductList = lazy(() => 
+  import('productApp@v1.2.3/ProductList')
+)
+
+// Or use latest
+const ProductList = lazy(() => 
+  import('productApp@latest/ProductList')
+)
+```
+
+## Styling Strategies
+
+### CSS Modules
+
+```tsx
+// product.module.css
+.container {
+  padding: 20px;
+}
+
+// ProductList.tsx
+import styles from './product.module.css'
+
+export function ProductList() {
+  return <div className={styles.container}>...</div>
+}
+```
+
+### CSS-in-JS with Scoping
+
+```tsx
+import styled from '@emotion/styled'
+
+// Scoped to this micro-frontend
+const Container = styled.div`
+  padding: 20px;
+  background: var(--product-bg);
+`
+```
+
+### Shadow DOM
+
+```typescript
+class ProductCard extends HTMLElement {
+  constructor() {
+    super()
+    this.attachShadow({ mode: 'open' })
+  }
+  
+  connectedCallback() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        .card { 
+          /* Styles are isolated */ 
+          padding: 20px;
+        }
+      </style>
+      <div class="card">
+        <slot></slot>
+      </div>
+    `
+  }
+}
+```
+
+## Testing Micro-frontends
+
+### Integration Testing
+
+```typescript
+import { render, screen } from '@testing-library/react'
+import '@testing-library/jest-dom'
+
+test('product list integrates with cart', async () => {
+  render(
+    <>
+      <ProductList />
+      <Cart />
+    </>
+  )
+  
+  const addButton = screen.getByText('Add to Cart')
+  fireEvent.click(addButton)
+  
+  expect(await screen.findByText('1 item in cart')).toBeInTheDocument()
+})
+```
+
+### Contract Testing
+
+```typescript
+// Product app contract
+export const productAppContract = {
+  events: {
+    'product:selected': {
+      productId: 'string',
+      name: 'string',
+      price: 'number'
+    }
+  },
+  props: {
+    onProductClick: 'function',
+    filters: 'object'
+  }
+}
+
+// Test that implementation matches contract
+test('ProductList matches contract', () => {
+  const handler = jest.fn()
+  render(<ProductList onProductClick={handler} />)
+  
+  fireEvent.click(screen.getByText('Product 1'))
+  
+  expect(handler).toHaveBeenCalledWith(
+    expect.objectContaining({
+      productId: expect.any(String),
+      name: expect.any(String),
+      price: expect.any(Number)
+    })
+  )
+})
+```
+
+## Performance Optimization
+
+### Code Splitting
+
+```typescript
+// Lazy load micro-frontends
+const ProductApp = lazy(() => import('productApp/App'))
+const CartApp = lazy(() => import('cartApp/App'))
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ProductApp />
+      <CartApp />
+    </Suspense>
+  )
+}
+```
+
+### Preloading
+
+```typescript
+// Preload micro-frontend on hover
+function NavLink({ to, children }) {
+  const handleMouseEnter = () => {
+    if (to === '/products') {
+      import('productApp/App')
+    }
+  }
+  
+  return (
+    <Link to={to} onMouseEnter={handleMouseEnter}>
+      {children}
+    </Link>
+  )
+}
+```
+
+### Resource Hints
+
+```html
+<!-- Preconnect to micro-frontend domains -->
+<link rel="preconnect" href="https://products.example.com">
+<link rel="dns-prefetch" href="https://checkout.example.com">
+
+<!-- Preload critical micro-frontends -->
+<link rel="modulepreload" href="https://cdn.example.com/product-app.js">
+```
+
+## Common Challenges
+
+### 1. Shared State Management
+
+**Problem:** Multiple micro-frontends need to share state
+**Solution:** Use event bus, shared store, or URL as source of truth
+
+### 2. Duplicate Dependencies
+
+**Problem:** Same library loaded multiple times
+**Solution:** Module federation with shared dependencies
+
+### 3. Cross-cutting Concerns
+
+**Problem:** Authentication, logging, monitoring across apps
+**Solution:** Shared utilities package or app shell handles these
+
+### 4. Consistent UX
+
+**Problem:** Different look and feel across micro-frontends
+**Solution:** Shared design system, style guide, component library
+
+## Best Practices
+
+### Do
+✅ Define clear boundaries between micro-frontends
+✅ Use a shared design system
+✅ Implement contracts between apps
+✅ Monitor each micro-frontend independently
+✅ Use semantic versioning
+✅ Document communication patterns
+✅ Implement error boundaries
+
+### Don't
+❌ Share state directly between micro-frontends
+❌ Tightly couple micro-frontends
+❌ Skip integration testing
+❌ Ignore bundle size
+❌ Over-communicate between apps
+❌ Share internal components
+❌ Deploy all micro-frontends together
+
+## Real-world Example
+
+```typescript
+// App Shell
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Header } from '@myapp/design-system'
+
+const Products = lazy(() => import('productApp/App'))
+const Checkout = lazy(() => import('checkoutApp/App'))
+const Account = lazy(() => import('accountApp/App'))
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Header />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/products/*" element={<Products />} />
+          <Route path="/checkout/*" element={<Checkout />} />
+          <Route path="/account/*" element={<Account />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  )
+}
+```
+
+## Tools & Frameworks
+
+- **Module Federation**: Webpack 5 feature
+- **Single-SPA**: Framework-agnostic micro-frontends
+- **Nx**: Monorepo with micro-frontend support
+- **Bit**: Component-driven development
+- **Piral**: Framework for portal applications
+- **Qiankun**: Micro-frontend framework based on single-spa
+
+## When to Use Micro-frontends
+
+### Good Fit
+- Large teams working on same application
+- Different parts owned by different teams
+- Need for independent deployments
+- Gradual migration from legacy app
+
+### Not a Good Fit
+- Small team or application
+- High performance requirements
+- Tight coupling between features
+- Simple applications
+
+## Migration Strategy
+
+1. **Identify boundaries** - Map out logical feature boundaries
+2. **Start with app shell** - Create container application
+3. **Extract one feature** - Move one feature to micro-frontend
+4. **Test integration** - Ensure proper communication
+5. **Iterate** - Gradually extract more features
+6. **Optimize** - Reduce duplication, improve performance
+
