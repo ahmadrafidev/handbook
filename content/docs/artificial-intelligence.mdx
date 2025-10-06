@@ -1,0 +1,413 @@
+---
+title: Artificial Intelligence (AI)
+description: AI integration, LLMs, and machine learning in modern applications
+---
+
+# Artificial Intelligence (AI)
+
+AI is transforming how we build and interact with software, from natural language processing to predictive analytics.
+
+## Large Language Models (LLMs)
+
+### OpenAI Integration
+```typescript
+import OpenAI from 'openai'
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
+
+async function generateResponse(prompt: string) {
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful assistant.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 500
+  })
+  
+  return completion.choices[0]?.message?.content
+}
+```
+
+### Streaming Responses
+```typescript
+async function streamResponse(prompt: string) {
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: prompt }],
+    stream: true
+  })
+  
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content || ''
+    process.stdout.write(content)
+  }
+}
+```
+
+### Function Calling
+```typescript
+const functions = [{
+  name: 'get_weather',
+  description: 'Get the current weather for a location',
+  parameters: {
+    type: 'object',
+    properties: {
+      location: {
+        type: 'string',
+        description: 'City and state, e.g. San Francisco, CA'
+      },
+      unit: {
+        type: 'string',
+        enum: ['celsius', 'fahrenheit']
+      }
+    },
+    required: ['location']
+  }
+}]
+
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'What\'s the weather in SF?' }],
+  functions,
+  function_call: 'auto'
+})
+```
+
+## Embeddings & Vector Search
+
+### Generate Embeddings
+```typescript
+async function getEmbedding(text: string) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text
+  })
+  
+  return response.data[0].embedding
+}
+```
+
+### Vector Database (Pinecone)
+```typescript
+import { Pinecone } from '@pinecone-database/pinecone'
+
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY
+})
+
+const index = pinecone.index('documents')
+
+// Upsert vectors
+await index.upsert([{
+  id: 'doc1',
+  values: await getEmbedding(document.content),
+  metadata: {
+    title: document.title,
+    content: document.content
+  }
+}])
+
+// Search similar documents
+const queryEmbedding = await getEmbedding(query)
+const results = await index.query({
+  vector: queryEmbedding,
+  topK: 5,
+  includeMetadata: true
+})
+```
+
+## Retrieval-Augmented Generation (RAG)
+
+### Basic RAG Pipeline
+```typescript
+async function ragQuery(question: string) {
+  // 1. Generate query embedding
+  const queryEmbedding = await getEmbedding(question)
+  
+  // 2. Find relevant documents
+  const relevantDocs = await index.query({
+    vector: queryEmbedding,
+    topK: 3,
+    includeMetadata: true
+  })
+  
+  // 3. Build context from retrieved documents
+  const context = relevantDocs.matches
+    .map(match => match.metadata?.content)
+    .join('\n\n')
+  
+  // 4. Generate answer with context
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: `Answer based on this context:\n\n${context}`
+      },
+      {
+        role: 'user',
+        content: question
+      }
+    ]
+  })
+  
+  return completion.choices[0]?.message?.content
+}
+```
+
+## Prompt Engineering
+
+### Effective Prompts
+```typescript
+// ❌ Vague
+const prompt = 'Write code'
+
+// ✅ Specific
+const prompt = `
+Write a TypeScript function that:
+- Takes an array of numbers as input
+- Returns the average of the numbers
+- Handles empty arrays by returning 0
+- Includes JSDoc comments
+- Has proper error handling
+`
+
+// ✅ With examples (few-shot learning)
+const prompt = `
+Convert user messages to structured data.
+
+Examples:
+User: "Book a flight to NYC on Monday"
+Output: { action: "book_flight", destination: "NYC", date: "Monday" }
+
+User: "Cancel my reservation for tomorrow"
+Output: { action: "cancel_reservation", date: "tomorrow" }
+
+User: "Find hotels in Paris next week"
+Output:
+`
+```
+
+### System Prompts
+```typescript
+const systemPrompts = {
+  codeReviewer: `You are an expert code reviewer. Analyze code for:
+- Bugs and logic errors
+- Performance issues
+- Security vulnerabilities
+- Code style and best practices
+Provide constructive feedback with examples.`,
+  
+  technicalWriter: `You are a technical documentation expert. Write:
+- Clear, concise explanations
+- Step-by-step instructions
+- Code examples with comments
+- Common pitfalls and solutions`,
+  
+  dataAnalyst: `You are a data analyst. Analyze data and:
+- Identify patterns and trends
+- Provide statistical insights
+- Suggest actionable recommendations
+- Visualize findings when appropriate`
+}
+```
+
+## AI-Powered Features
+
+### Code Generation
+```typescript
+async function generateCode(description: string) {
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are an expert programmer. Generate clean, well-documented code.'
+      },
+      {
+        role: 'user',
+        content: `Generate TypeScript code for: ${description}`
+      }
+    ]
+  })
+  
+  return completion.choices[0]?.message?.content
+}
+```
+
+### Content Summarization
+```typescript
+async function summarize(text: string) {
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'Summarize the following text in 2-3 sentences.'
+      },
+      {
+        role: 'user',
+        content: text
+      }
+    ]
+  })
+  
+  return completion.choices[0]?.message?.content
+}
+```
+
+### Semantic Search
+```typescript
+async function semanticSearch(query: string, documents: string[]) {
+  const queryEmbedding = await getEmbedding(query)
+  
+  const docEmbeddings = await Promise.all(
+    documents.map(doc => getEmbedding(doc))
+  )
+  
+  const similarities = docEmbeddings.map((embedding, index) => ({
+    document: documents[index],
+    similarity: cosineSimilarity(queryEmbedding, embedding)
+  }))
+  
+  return similarities
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 5)
+}
+```
+
+## Best Practices
+
+### Rate Limiting
+```typescript
+import pLimit from 'p-limit'
+
+const limit = pLimit(5) // Max 5 concurrent requests
+
+const results = await Promise.all(
+  items.map(item => 
+    limit(() => processWithAI(item))
+  )
+)
+```
+
+### Error Handling
+```typescript
+async function robustAICall(prompt: string, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    } catch (error) {
+      if (i === maxRetries - 1) throw error
+      
+      // Exponential backoff
+      await new Promise(resolve => 
+        setTimeout(resolve, Math.pow(2, i) * 1000)
+      )
+    }
+  }
+}
+```
+
+### Cost Management
+```typescript
+// Track token usage
+function estimateTokens(text: string): number {
+  // Rough estimate: ~4 characters per token
+  return Math.ceil(text.length / 4)
+}
+
+// Use cheaper models when possible
+function selectModel(complexity: 'simple' | 'complex') {
+  return complexity === 'simple' ? 'gpt-3.5-turbo' : 'gpt-4'
+}
+
+// Cache responses
+const cache = new Map<string, string>()
+
+async function cachedAICall(prompt: string) {
+  const cached = cache.get(prompt)
+  if (cached) return cached
+  
+  const response = await generateResponse(prompt)
+  cache.set(prompt, response)
+  return response
+}
+```
+
+## Ethical Considerations
+
+### Responsible AI
+- Be transparent about AI usage
+- Respect user privacy
+- Avoid bias in training data
+- Implement content moderation
+- Provide opt-out options
+
+### Content Moderation
+```typescript
+async function moderateContent(text: string) {
+  const moderation = await openai.moderations.create({
+    input: text
+  })
+  
+  const result = moderation.results[0]
+  
+  if (result.flagged) {
+    return {
+      allowed: false,
+      categories: result.categories
+    }
+  }
+  
+  return { allowed: true }
+}
+```
+
+## Machine Learning Basics
+
+### Model Training Concepts
+- Training data
+- Validation data
+- Test data
+- Overfitting vs underfitting
+- Hyperparameter tuning
+
+### Common ML Tasks
+- Classification
+- Regression
+- Clustering
+- Anomaly detection
+- Recommendation systems
+
+## Tools & Frameworks
+
+- **OpenAI**: GPT models, embeddings
+- **Anthropic**: Claude models
+- **LangChain**: LLM application framework
+- **Vercel AI SDK**: UI for AI applications
+- **Hugging Face**: Open-source models
+- **TensorFlow/PyTorch**: Deep learning frameworks
+- **Pinecone/Weaviate**: Vector databases
+
+## Resources
+
+- OpenAI Documentation
+- LangChain Docs
+- Prompt Engineering Guide
+- Papers with Code
+- AI Safety Research
+

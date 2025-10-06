@@ -1,0 +1,63 @@
+---
+title: Version Control
+description: Git workflows, branching strategies, and version control best practices
+---
+
+# Version Control
+
+Version control is essential for managing code changes, collaborating with teams, and maintaining project history.
+
+## Git Fundamentals
+
+### Core Concepts
+- Commits: Snapshots of your code
+- Branches: Parallel development lines
+- Merges: Combining changes
+- Remote repositories: Shared code storage
+
+## Branching Strategies
+
+### Git Flow
+```
+main (production)
+├── develop (integration)
+    ├── feature/user-authentication
+    ├── feature/payment-integration
+    └── hotfix/security-patch
+```
+
+### GitHub Flow
+- Simple, trunk-based development
+- Feature branches off main
+- Pull requests for review
+- Deploy from main
+
+### Trunk-Based Development
+- Short-lived feature branches
+- Continuous integration
+- Feature flags for incomplete work
+
+## Best Practices
+
+### Commit Messages
+```
+feat: add user authentication
+fix: resolve memory leak in image processing
+docs: update API documentation
+refactor: simplify payment validation logic
+```
+
+### Branching Conventions
+```
+feature/feature-name
+bugfix/bug-description
+hotfix/critical-fix
+release/v1.2.0
+```
+
+## Tools & Workflows
+- Git hooks for automation
+- Rebase vs merge strategies
+- Cherry-picking commits
+- Stashing work in progress
+

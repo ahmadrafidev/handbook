@@ -1,0 +1,507 @@
+---
+title: Rendering
+description: Understanding rendering strategies in modern web applications
+---
+
+# Rendering
+
+Rendering strategies determine how and when your application generates HTML and sends it to the browser.
+
+## Rendering Patterns
+
+### Client-Side Rendering (CSR)
+```tsx
+'use client'
+
+import { useState, useEffect } from 'react'
+
+export default function ClientPage() {
+  const [data, setData] = useState(null)
+  
+  useEffect(() => {
+    fetch('/api/data')
+      .then(res => res.json())
+      .then(setData)
+  }, [])
+  
+  if (!data) return <div>Loading...</div>
+  
+  return <div>{/* Render data */}</div>
+}
+```
+
+**Pros:**
+- Rich interactions
+- Fast subsequent navigations
+- Reduced server load
+
+**Cons:**
+- Slower initial load
+- SEO challenges
+- Requires JavaScript
+
+### Server-Side Rendering (SSR)
+```tsx
+// Next.js App Router (Server Component)
+async function getData() {
+  const res = await fetch('https://api.example.com/data', {
+    cache: 'no-store' // Dynamic data
+  })
+  return res.json()
+}
+
+export default async function ServerPage() {
+  const data = await getData()
+  
+  return <div>{/* Render data */}</div>
+}
+```
+
+**Pros:**
+- Fast initial load
+- SEO friendly
+- Works without JavaScript
+
+**Cons:**
+- Server load
+- Network latency
+- Full page reloads
+
+### Static Site Generation (SSG)
+```tsx
+// Next.js - Generated at build time
+async function getData() {
+  const res = await fetch('https://api.example.com/data')
+  return res.json()
+}
+
+export default async function StaticPage() {
+  const data = await getData()
+  
+  return <div>{/* Render data */}</div>
+}
+
+// Force static generation
+export const dynamic = 'force-static'
+```
+
+**Pros:**
+- Fastest performance
+- Low server cost
+- CDN cacheable
+
+**Cons:**
+- Build time increases with pages
+- Stale data
+- Rebuilds required
+
+### Incremental Static Regeneration (ISR)
+```tsx
+// Revalidate every 60 seconds
+async function getData() {
+  const res = await fetch('https://api.example.com/data', {
+    next: { revalidate: 60 }
+  })
+  return res.json()
+}
+
+export default async function ISRPage() {
+  const data = await getData()
+  
+  return <div>{/* Render data */}</div>
+}
+```
+
+**Pros:**
+- Static performance
+- Fresh content
+- Scales well
+
+**Cons:**
+- Slightly stale data
+- First visitor after revalidate waits
+- More complex
+
+## React Server Components (RSC)
+
+### Server Components
+```tsx
+// Runs only on the server
+async function ServerComponent() {
+  const data = await db.query('SELECT * FROM users')
+  
+  return (
+    <div>
+      {data.map(user => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+**Benefits:**
+- Direct database access
+- Reduced bundle size
+- Automatic code splitting
+- Better security
+
+### Client Components
+```tsx
+'use client'
+
+import { useState } from 'react'
+
+function ClientComponent() {
+  const [count, setCount] = useState(0)
+  
+  return (
+    <button onClick={() => setCount(count + 1)}>
+      Count: {count}
+    </button>
+  )
+}
+```
+
+**Use when you need:**
+- State (`useState`, `useReducer`)
+- Effects (`useEffect`)
+- Browser APIs
+- Event handlers
+- Custom hooks
+
+### Composing Server and Client
+```tsx
+// Server Component
+import ClientButton from './ClientButton'
+
+async function ServerParent() {
+  const data = await getData()
+  
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      {/* Pass server data as props to client */}
+      <ClientButton initialCount={data.count} />
+    </div>
+  )
+}
+
+// Client Component
+'use client'
+
+function ClientButton({ initialCount }: { initialCount: number }) {
+  const [count, setCount] = useState(initialCount)
+  
+  return (
+    <button onClick={() => setCount(count + 1)}>
+      {count}
+    </button>
+  )
+}
+```
+
+## Data Fetching Patterns
+
+### Parallel Data Fetching
+```tsx
+async function Page() {
+  // Fetch in parallel
+  const [users, posts, comments] = await Promise.all([
+    fetchUsers(),
+    fetchPosts(),
+    fetchComments()
+  ])
+  
+  return (
+    <div>
+      <Users data={users} />
+      <Posts data={posts} />
+      <Comments data={comments} />
+    </div>
+  )
+}
+```
+
+### Sequential Data Fetching
+```tsx
+async function Page() {
+  // Wait for user first
+  const user = await fetchUser()
+  
+  // Then fetch user's posts
+  const posts = await fetchUserPosts(user.id)
+  
+  return (
+    <div>
+      <User data={user} />
+      <Posts data={posts} />
+    </div>
+  )
+}
+```
+
+### Streaming
+```tsx
+import { Suspense } from 'react'
+
+async function SlowComponent() {
+  const data = await slowDataFetch()
+  return <div>{data}</div>
+}
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Page Title</h1>
+      <Suspense fallback={<div>Loading...</div>}>
+        <SlowComponent />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## Caching Strategies
+
+### Time-Based Revalidation
+```typescript
+// Revalidate after 1 hour
+fetch('https://api.example.com/data', {
+  next: { revalidate: 3600 }
+})
+```
+
+### On-Demand Revalidation
+```typescript
+// app/api/revalidate/route.ts
+import { revalidatePath } from 'next/cache'
+
+export async function POST(request: Request) {
+  const { path } = await request.json()
+  
+  revalidatePath(path)
+  
+  return Response.json({ revalidated: true })
+}
+```
+
+### Cache Control
+```typescript
+// No caching
+fetch('https://api.example.com/data', {
+  cache: 'no-store'
+})
+
+// Cache indefinitely
+fetch('https://api.example.com/data', {
+  cache: 'force-cache'
+})
+```
+
+## Hydration
+
+### Understanding Hydration
+```
+1. Server generates HTML
+   ↓
+2. Browser receives HTML (visible)
+   ↓
+3. JavaScript loads
+   ↓
+4. React "hydrates" the HTML (interactive)
+```
+
+### Hydration Mismatches
+```tsx
+// ❌ Causes hydration error
+function Component() {
+  return <div>{Date.now()}</div>
+}
+
+// ✅ Use effect for client-only rendering
+function Component() {
+  const [timestamp, setTimestamp] = useState(null)
+  
+  useEffect(() => {
+    setTimestamp(Date.now())
+  }, [])
+  
+  return <div>{timestamp || 'Loading...'}</div>
+}
+```
+
+## Progressive Enhancement
+
+### Basic HTML First
+```tsx
+// Works without JavaScript
+export default function ContactForm() {
+  return (
+    <form action="/api/contact" method="POST">
+      <input name="email" type="email" required />
+      <textarea name="message" required />
+      <button type="submit">Send</button>
+    </form>
+  )
+}
+```
+
+### Enhanced with JavaScript
+```tsx
+'use client'
+
+export default function ContactForm() {
+  const [status, setStatus] = useState('')
+  
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    
+    const form = e.target as HTMLFormElement
+    const formData = new FormData(form)
+    
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      body: formData
+    })
+    
+    if (response.ok) {
+      setStatus('Message sent!')
+      form.reset()
+    }
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <textarea name="message" required />
+      <button type="submit">Send</button>
+      {status && <p>{status}</p>}
+    </form>
+  )
+}
+```
+
+## Islands Architecture
+
+### Concept
+```tsx
+// Mostly static content
+export default function Page() {
+  return (
+    <article>
+      <h1>Article Title</h1>
+      <p>Static content...</p>
+      
+      {/* Interactive "island" */}
+      <LikeButton />
+      
+      <p>More static content...</p>
+      
+      {/* Another interactive "island" */}
+      <CommentSection />
+    </article>
+  )
+}
+```
+
+## Performance Optimization
+
+### Lazy Loading
+```tsx
+import dynamic from 'next/dynamic'
+
+// Lazy load heavy component
+const HeavyChart = dynamic(() => import('./HeavyChart'), {
+  loading: () => <Skeleton />,
+  ssr: false
+})
+```
+
+### Route Prefetching
+```tsx
+import Link from 'next/link'
+
+// Automatically prefetches on hover
+<Link href="/about" prefetch>
+  About
+</Link>
+```
+
+### Code Splitting
+```tsx
+// Automatic route-based code splitting
+// app/dashboard/page.tsx
+// app/settings/page.tsx
+// app/profile/page.tsx
+// Each route is a separate bundle
+```
+
+## Rendering Strategies by Use Case
+
+### Marketing Site
+**Recommendation:** SSG + ISR
+- Fast load times
+- SEO optimized
+- Periodic content updates
+
+### E-commerce
+**Recommendation:** ISR + CSR
+- Product pages: ISR
+- Cart/Checkout: CSR
+- Real-time inventory
+
+### Dashboard
+**Recommendation:** SSR + CSR
+- Initial data: SSR
+- Real-time updates: CSR
+- Authenticated content
+
+### Blog
+**Recommendation:** SSG
+- Static posts
+- Fast performance
+- Easy to cache
+
+### Social Media Feed
+**Recommendation:** SSR + Streaming + CSR
+- Initial posts: SSR
+- Infinite scroll: CSR
+- Real-time updates
+
+## Debugging Rendering
+
+### Check Component Type
+```tsx
+// Add to component
+console.log('Rendering on:', typeof window === 'undefined' ? 'server' : 'client')
+```
+
+### Next.js Debugging
+```bash
+# Check bundle size
+npm run build
+
+# Analyze bundle
+npm run build -- --analyze
+```
+
+## Best Practices
+
+1. **Default to Server Components** - Use client components only when needed
+2. **Minimize JavaScript** - Less JS = faster page loads
+3. **Stream Long Requests** - Don't block the entire page
+4. **Cache Aggressively** - Revalidate when needed
+5. **Measure Performance** - Use Lighthouse and Web Vitals
+6. **Progressive Enhancement** - Work without JavaScript first
+7. **Optimize Images** - Use Next.js Image component
+8. **Prefetch Routes** - Anticipate user navigation
+
+## Tools
+
+- **Next.js**: Full-stack React framework
+- **React**: UI library with RSC support
+- **Astro**: Islands architecture
+- **Remix**: Server-side rendering framework
+- **SvelteKit**: Svelte framework with SSR
+

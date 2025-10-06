@@ -1,0 +1,438 @@
+---
+title: RFC
+description: Request for Comments - Collaborative decision making through written proposals
+---
+
+# RFC (Request for Comments)
+
+RFCs are a structured way to propose and discuss significant changes to systems, processes, or architecture.
+
+## What is an RFC?
+
+A Request for Comments is a written document that:
+- Proposes a significant change or new feature
+- Provides context and motivation
+- Outlines technical approach
+- Solicits feedback from stakeholders
+- Documents decision-making process
+
+## When to Write an RFC
+
+### ✅ Write an RFC for:
+- Major architectural changes
+- New systems or services
+- Breaking API changes
+- Significant process changes
+- Cross-team initiatives
+- Technology migrations
+
+### ❌ Don't need RFC for:
+- Bug fixes
+- Minor refactoring
+- Small feature additions
+- Documentation updates
+- Routine maintenance
+
+## RFC Template
+
+### Basic Structure
+```markdown
+# RFC: [Title]
+
+**Status:** Draft | Review | Approved | Rejected | Implemented
+**Author:** [Name]
+**Created:** [Date]
+**Updated:** [Date]
+
+## Summary
+
+One paragraph explanation of the proposal.
+
+## Motivation
+
+Why are we doing this? What problem does it solve?
+
+## Detailed Design
+
+Technical details of the implementation.
+
+## Drawbacks
+
+What are the cons? Why should we *not* do this?
+
+## Alternatives
+
+What other approaches were considered? Why were they not chosen?
+
+## Adoption Strategy
+
+How will this be implemented? What's the migration path?
+
+## Unresolved Questions
+
+What parts are still unclear? What decisions are left to make?
+```
+
+### Example RFC
+```markdown
+# RFC-0042: Migrate from REST to GraphQL
+
+**Status:** Under Review
+**Author:** Jane Smith
+**Created:** 2024-01-15
+**Updated:** 2024-01-20
+
+## Summary
+
+Migrate our public API from REST to GraphQL to provide clients 
+with more flexible data fetching and reduce the number of roundtrips.
+
+## Motivation
+
+### Current Problems:
+1. **Over-fetching**: Clients receive more data than needed
+2. **Under-fetching**: Multiple requests needed for related data
+3. **API versioning**: Managing multiple API versions is complex
+4. **Documentation**: Keeping REST docs in sync is challenging
+
+### Benefits of GraphQL:
+- Clients request exactly the data they need
+- Single request for related data
+- Self-documenting via schema
+- Strong typing with TypeScript
+- Better developer experience
+
+## Detailed Design
+
+### Schema Definition
+```graphql
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  posts: [Post!]!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+  comments: [Comment!]!
+}
+
+type Query {
+  user(id: ID!): User
+  users(limit: Int, offset: Int): [User!]!
+  post(id: ID!): Post
+}
+
+type Mutation {
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
+}
+```
+
+### Implementation Plan
+
+#### Phase 1: GraphQL Server Setup (Week 1-2)
+- Install Apollo Server
+- Define initial schema
+- Implement basic resolvers
+- Set up DataLoader for N+1 prevention
+
+#### Phase 2: Parallel Operation (Week 3-8)
+- Run GraphQL alongside existing REST API
+- Migrate internal services to use GraphQL
+- Update documentation
+- Train team on GraphQL best practices
+
+#### Phase 3: Client Migration (Week 9-16)
+- Migrate web app to GraphQL
+- Migrate mobile apps to GraphQL
+- Update SDKs
+
+#### Phase 4: REST Deprecation (Week 17-20)
+- Announce REST API deprecation (6-month notice)
+- Monitor usage of REST endpoints
+- Provide migration guides
+- Shut down REST API
+
+### Technology Stack
+- **Server**: Apollo Server
+- **Client**: Apollo Client
+- **Code Generation**: GraphQL Code Generator
+- **Testing**: GraphQL Testing Library
+
+### Performance Considerations
+- Implement query complexity limits
+- Add query depth limits
+- Enable response caching
+- Use DataLoader for batching
+- Monitor query performance
+
+## Drawbacks
+
+### Complexity
+- Learning curve for team members unfamiliar with GraphQL
+- More complex caching compared to REST
+- Requires different monitoring approach
+
+### Tooling
+- Need to update existing REST-based tooling
+- Integration with existing observability tools
+
+### Over-fetching Prevention
+- Clients could still write inefficient queries
+- Need query complexity analysis
+
+## Alternatives
+
+### Option 1: Improve Existing REST API
+- Add query parameters for field selection
+- Implement better batching endpoints
+- Use JSON:API specification
+
+**Why not chosen:** 
+- Still requires multiple roundtrips
+- Less type-safe
+- More maintenance burden
+
+### Option 2: Use tRPC
+- Type-safe API without schema
+- Better TypeScript integration
+- Simpler than GraphQL
+
+**Why not chosen:**
+- Limited to TypeScript clients
+- Not widely adopted
+- Less ecosystem support
+
+### Option 3: gRPC
+- High performance
+- Strong typing
+- Good for microservices
+
+**Why not chosen:**
+- Not browser-friendly
+- Steeper learning curve
+- Overkill for our use case
+
+## Adoption Strategy
+
+### Migration Path
+1. No breaking changes to existing REST API during transition
+2. Parallel operation for 6 months minimum
+3. Comprehensive documentation and training
+4. Gradual client migration with feature flags
+
+### Communication Plan
+- Engineering all-hands presentation
+- Documentation on internal wiki
+- Office hours for questions
+- Regular updates in #engineering channel
+
+### Metrics for Success
+- API response time < 200ms (p95)
+- Reduce API calls by 50%
+- Developer satisfaction score > 4/5
+- 100% of clients migrated within 6 months
+
+## Unresolved Questions
+
+1. How do we handle file uploads in GraphQL?
+   - **Resolution needed by:** Week 2
+
+2. What's our strategy for subscriptions (real-time updates)?
+   - **Resolution needed by:** Phase 2
+
+3. How do we migrate authentication?
+   - **Resolution needed by:** Week 1
+
+4. What's the plan for rate limiting?
+   - **Resolution needed by:** Week 3
+
+## References
+- [GraphQL Best Practices](https://graphql.org/learn/best-practices/)
+- [Apollo Server Documentation](https://www.apollographql.com/docs/)
+- [Internal REST API Documentation](/docs/rest-api)
+
+## Feedback
+
+### Comments
+- @john.doe: "Concerned about the learning curve. Can we do training sessions?"
+  - **Response:** Yes, we'll have weekly training sessions during Phase 1.
+
+- @jane.smith: "What about API versioning in GraphQL?"
+  - **Response:** GraphQL uses field deprecation instead of versioning. Added to documentation.
+
+### Decisions
+- **2024-01-18:** Approved by architecture review board
+- **2024-01-20:** Funding approved for 2 FTEs for 6 months
+```
+
+## RFC Process
+
+### 1. Draft
+```
+Author writes initial RFC → Internal review → Share for feedback
+```
+
+### 2. Review
+```
+Team discussion → Incorporate feedback → Address concerns → Iterate
+```
+
+### 3. Decision
+```
+Approval meeting → Final review → Accept/Reject → Document decision
+```
+
+### 4. Implementation
+```
+Create tickets → Assign work → Track progress → Update RFC
+```
+
+### 5. Retrospective
+```
+Evaluate outcome → Document learnings → Update process
+```
+
+## RFC Best Practices
+
+### Writing
+
+#### Be Clear and Concise
+- Use simple language
+- Avoid jargon when possible
+- Explain technical terms
+- Use examples
+
+#### Be Thorough
+- Address common questions upfront
+- Explain trade-offs
+- Consider edge cases
+- Think about migration
+
+#### Be Open
+- Invite feedback
+- Consider alternatives
+- Acknowledge limitations
+- Be willing to change
+
+### Reviewing
+
+#### Ask Questions
+- "What about X scenario?"
+- "Have you considered Y approach?"
+- "How does this scale?"
+
+#### Provide Constructive Feedback
+- Explain your reasoning
+- Suggest alternatives
+- Be respectful
+- Focus on improving the proposal
+
+#### Consider Perspectives
+- User experience
+- Developer experience
+- Operational impact
+- Business value
+
+## Common Sections
+
+### Problem Statement
+What problem are we solving?
+
+### Goals & Non-Goals
+What is in and out of scope?
+
+### Success Metrics
+How do we measure success?
+
+### Dependencies
+What needs to happen first?
+
+### Timeline
+When will this be done?
+
+### Risks
+What could go wrong?
+
+### Rollout Plan
+How do we deploy this?
+
+### Rollback Plan
+How do we undo this if needed?
+
+## Tools
+
+### RFC Management
+- **GitHub Discussions**: For public RFCs
+- **Confluence**: For internal documentation
+- **Google Docs**: For collaborative editing
+- **Linear/Jira**: For tracking implementation
+
+### Templates
+Create and maintain RFC templates that fit your team's needs.
+
+### Automation
+- Auto-create RFC tickets
+- Track RFC status
+- Notify stakeholders
+- Archive old RFCs
+
+## Benefits of RFCs
+
+### For Individuals
+- Clarify thinking
+- Document decisions
+- Build communication skills
+- Gain visibility
+
+### For Teams
+- Improve collaboration
+- Share knowledge
+- Align on direction
+- Reduce surprises
+
+### For Organizations
+- Document history
+- Enable async work
+- Scale decision-making
+- Improve quality
+
+## RFC Anti-Patterns
+
+### ❌ Too Early
+Writing RFC before exploring the problem space.
+
+### ❌ Too Late
+Writing RFC after making the decision.
+
+### ❌ Too Long
+Creating 50-page documents that nobody reads.
+
+### ❌ Too Short
+Leaving out critical details.
+
+### ❌ Too Rigid
+Treating RFC as unchangeable once written.
+
+### ❌ Too Many
+Creating RFCs for trivial changes.
+
+## Examples of RFC Topics
+
+- Adopting a new framework
+- Database migration
+- API redesign
+- Authentication system
+- Observability strategy
+- Testing approach
+- CI/CD pipeline
+- Team structure
+- On-call policy
+- Code review process
+

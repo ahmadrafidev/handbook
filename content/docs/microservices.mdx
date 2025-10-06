@@ -1,0 +1,155 @@
+---
+title: Microservices
+description: Designing, building, and managing microservice architectures
+---
+
+# Microservices
+
+Microservices architecture structures an application as a collection of loosely coupled, independently deployable services.
+
+## Core Principles
+
+### Single Responsibility
+Each service does one thing well.
+
+### Autonomy
+Services are independently deployable and scalable.
+
+### Decentralization
+Decentralized data management and governance.
+
+### Resilience
+Design for failure, isolate failures.
+
+## Service Design
+
+### Bounded Context
+Define clear boundaries for each service based on business domains.
+
+### API Contract
+```typescript
+interface UserService {
+  getUser(id: string): Promise<User>
+  createUser(data: CreateUserDTO): Promise<User>
+  updateUser(id: string, data: UpdateUserDTO): Promise<User>
+  deleteUser(id: string): Promise<void>
+}
+```
+
+### Data Ownership
+Each service owns its data and database.
+
+## Communication
+
+### Synchronous
+```typescript
+// REST API call
+const response = await fetch('http://user-service/api/users/123')
+const user = await response.json()
+
+// gRPC call
+const user = await userClient.getUser({ id: '123' })
+```
+
+### Asynchronous
+```typescript
+// Event publishing
+await eventBus.publish('user.created', {
+  userId: '123',
+  email: 'user@example.com'
+})
+
+// Event handling
+eventBus.subscribe('user.created', async (event) => {
+  // Handle user creation
+})
+```
+
+## Patterns
+
+### API Gateway
+Single entry point for all clients, routes requests to appropriate services.
+
+### Service Mesh
+Infrastructure layer for service-to-service communication.
+
+### Backend for Frontend (BFF)
+Separate backend services for different frontend needs.
+
+### Saga Pattern
+Manage distributed transactions across services.
+
+### Circuit Breaker
+```typescript
+class CircuitBreaker {
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
+  private failureCount = 0
+  private lastFailureTime?: number
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (this.shouldAttemptReset()) {
+        this.state = 'HALF_OPEN'
+      } else {
+        throw new Error('Circuit breaker is OPEN')
+      }
+    }
+
+    try {
+      const result = await fn()
+      this.onSuccess()
+      return result
+    } catch (error) {
+      this.onFailure()
+      throw error
+    }
+  }
+}
+```
+
+## Data Management
+
+### Database Per Service
+Each service has its own database.
+
+### Event Sourcing
+Store state changes as events.
+
+### CQRS
+Separate read and write models.
+
+## Challenges
+
+### Complexity
+- Service orchestration
+- Distributed debugging
+- Testing complexity
+
+### Network Latency
+- Multiple service calls
+- Data consistency
+
+### Deployment
+- Container orchestration
+- Service versioning
+- Rolling updates
+
+## Tools & Technologies
+
+- **Containers**: Docker
+- **Orchestration**: Kubernetes
+- **Service Mesh**: Istio, Linkerd
+- **API Gateway**: Kong, AWS API Gateway
+- **Message Broker**: Kafka, RabbitMQ
+- **Monitoring**: Prometheus, Grafana
+
+## Best Practices
+
+- Start with a monolith, evolve to microservices
+- Define clear service boundaries
+- Implement comprehensive monitoring
+- Automate deployment and testing
+- Design for failure
+- Use asynchronous communication where possible
+- Implement proper security (authentication, authorization)
+

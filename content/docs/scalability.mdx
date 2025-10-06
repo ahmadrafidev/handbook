@@ -1,0 +1,569 @@
+---
+title: Scalability
+description: Designing systems that grow gracefully with demand
+---
+
+# Scalability
+
+Scalability is the ability of a system to handle increased load by adding resources.
+
+## Types of Scaling
+
+### Vertical Scaling (Scale Up)
+Add more power to existing machines.
+
+```
+Before: 4 CPU, 8GB RAM
+After:  16 CPU, 64GB RAM
+```
+
+**Pros:**
+- Simple implementation
+- No code changes needed
+- Maintains data consistency
+
+**Cons:**
+- Hardware limits
+- Single point of failure
+- Expensive at scale
+- Downtime during upgrades
+
+### Horizontal Scaling (Scale Out)
+Add more machines to the system.
+
+```
+Before: 1 server
+After:  10 servers behind load balancer
+```
+
+**Pros:**
+- No hardware limits
+- Better fault tolerance
+- Cost-effective
+- No downtime
+
+**Cons:**
+- Complex implementation
+- Data distribution challenges
+- Network latency
+- Consistency concerns
+
+## Load Balancing
+
+### Load Balancer Algorithms
+
+#### Round Robin
+```typescript
+class RoundRobinBalancer {
+  private currentIndex = 0
+  
+  selectServer(servers: Server[]): Server {
+    const server = servers[this.currentIndex]
+    this.currentIndex = (this.currentIndex + 1) % servers.length
+    return server
+  }
+}
+```
+
+#### Least Connections
+```typescript
+class LeastConnectionsBalancer {
+  selectServer(servers: Server[]): Server {
+    return servers.reduce((least, server) => 
+      server.activeConnections < least.activeConnections 
+        ? server 
+        : least
+    )
+  }
+}
+```
+
+#### Weighted Round Robin
+```typescript
+class WeightedRoundRobinBalancer {
+  selectServer(servers: WeightedServer[]): Server {
+    const totalWeight = servers.reduce((sum, s) => sum + s.weight, 0)
+    let random = Math.random() * totalWeight
+    
+    for (const server of servers) {
+      random -= server.weight
+      if (random <= 0) return server
+    }
+    
+    return servers[0]
+  }
+}
+```
+
+#### Consistent Hashing
+```typescript
+class ConsistentHashBalancer {
+  private ring = new Map<number, Server>()
+  
+  addServer(server: Server) {
+    // Add multiple virtual nodes for better distribution
+    for (let i = 0; i < 150; i++) {
+      const hash = this.hash(`${server.id}:${i}`)
+      this.ring.set(hash, server)
+    }
+  }
+  
+  selectServer(key: string): Server {
+    const hash = this.hash(key)
+    
+    // Find first server with hash >= key hash
+    for (const [ringHash, server] of this.ring) {
+      if (ringHash >= hash) return server
+    }
+    
+    // Wrap around to first server
+    return Array.from(this.ring.values())[0]
+  }
+  
+  private hash(key: string): number {
+    // Simple hash function (use better in production)
+    let hash = 0
+    for (let i = 0; i < key.length; i++) {
+      hash = ((hash << 5) - hash) + key.charCodeAt(i)
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash)
+  }
+}
+```
+
+## Database Scaling
+
+### Read Replicas
+```typescript
+class DatabasePool {
+  private primary: Database
+  private replicas: Database[]
+  
+  // Writes go to primary
+  async write(query: string, params: any[]) {
+    return this.primary.execute(query, params)
+  }
+  
+  // Reads can go to replicas
+  async read(query: string, params: any[]) {
+    const replica = this.selectReplica()
+    return replica.execute(query, params)
+  }
+  
+  private selectReplica(): Database {
+    // Random selection or round-robin
+    return this.replicas[
+      Math.floor(Math.random() * this.replicas.length)
+    ]
+  }
+}
+```
+
+### Sharding
+```typescript
+// Partition data across multiple databases
+
+interface Shard {
+  id: number
+  database: Database
+  minKey: string
+  maxKey: string
+}
+
+class ShardManager {
+  private shards: Shard[]
+  
+  // Hash-based sharding
+  selectShardByHash(key: string): Shard {
+    const hash = this.hash(key)
+    const shardIndex = hash % this.shards.length
+    return this.shards[shardIndex]
+  }
+  
+  // Range-based sharding
+  selectShardByRange(key: string): Shard {
+    return this.shards.find(shard => 
+      key >= shard.minKey && key <= shard.maxKey
+    )!
+  }
+  
+  async query(userId: string, query: string) {
+    const shard = this.selectShardByHash(userId)
+    return shard.database.execute(query)
+  }
+}
+```
+
+### Partitioning Strategies
+
+#### Horizontal Partitioning (Sharding)
+```sql
+-- Shard 1: Users with ID 1-1000000
+-- Shard 2: Users with ID 1000001-2000000
+-- Shard 3: Users with ID 2000001-3000000
+```
+
+#### Vertical Partitioning
+```sql
+-- Table 1: User core data (id, name, email)
+-- Table 2: User profile (bio, avatar, preferences)
+-- Table 3: User activity (last_login, post_count)
+```
+
+## Caching Strategies
+
+### Cache-Aside (Lazy Loading)
+```typescript
+async function getCacheAside(key: string) {
+  // Try cache first
+  const cached = await cache.get(key)
+  if (cached) return cached
+  
+  // Cache miss - load from database
+  const data = await database.get(key)
+  
+  // Store in cache
+  await cache.set(key, data, { ttl: 3600 })
+  
+  return data
+}
+```
+
+### Write-Through
+```typescript
+async function writeThrough(key: string, value: any) {
+  // Write to cache and database simultaneously
+  await Promise.all([
+    cache.set(key, value),
+    database.set(key, value)
+  ])
+}
+```
+
+### Write-Behind (Write-Back)
+```typescript
+async function writeBehind(key: string, value: any) {
+  // Write to cache immediately
+  await cache.set(key, value)
+  
+  // Queue database write for later
+  writeQueue.push({ key, value })
+}
+
+// Background worker
+async function processWriteQueue() {
+  while (true) {
+    const batch = writeQueue.splice(0, 100)
+    await database.batchWrite(batch)
+    await sleep(1000)
+  }
+}
+```
+
+### Cache Invalidation
+```typescript
+class CacheInvalidator {
+  // Time-based
+  async setWithTTL(key: string, value: any, ttl: number) {
+    await cache.set(key, value, { ttl })
+  }
+  
+  // Event-based
+  async invalidateOnUpdate(key: string) {
+    await cache.delete(key)
+  }
+  
+  // Pattern-based
+  async invalidatePattern(pattern: string) {
+    const keys = await cache.keys(pattern)
+    await Promise.all(keys.map(key => cache.delete(key)))
+  }
+}
+```
+
+## Message Queues
+
+### Producer-Consumer Pattern
+```typescript
+import { Queue } from 'bullmq'
+
+// Producer
+const emailQueue = new Queue('emails')
+
+async function sendEmail(to: string, subject: string, body: string) {
+  await emailQueue.add('send-email', {
+    to,
+    subject,
+    body
+  })
+}
+
+// Consumer
+import { Worker } from 'bullmq'
+
+const worker = new Worker('emails', async (job) => {
+  const { to, subject, body } = job.data
+  await emailService.send(to, subject, body)
+})
+```
+
+### Pub/Sub Pattern
+```typescript
+import Redis from 'ioredis'
+
+const redis = new Redis()
+
+// Publisher
+async function publishEvent(channel: string, message: any) {
+  await redis.publish(channel, JSON.stringify(message))
+}
+
+// Subscriber
+redis.subscribe('user-events', (err, count) => {
+  console.log(`Subscribed to ${count} channels`)
+})
+
+redis.on('message', (channel, message) => {
+  const data = JSON.parse(message)
+  console.log('Received:', data)
+})
+```
+
+## Rate Limiting
+
+### Token Bucket Algorithm
+```typescript
+class TokenBucket {
+  private tokens: number
+  private lastRefill: number
+  
+  constructor(
+    private capacity: number,
+    private refillRate: number // tokens per second
+  ) {
+    this.tokens = capacity
+    this.lastRefill = Date.now()
+  }
+  
+  async tryConsume(tokens = 1): Promise<boolean> {
+    this.refill()
+    
+    if (this.tokens >= tokens) {
+      this.tokens -= tokens
+      return true
+    }
+    
+    return false
+  }
+  
+  private refill() {
+    const now = Date.now()
+    const timePassed = (now - this.lastRefill) / 1000
+    const tokensToAdd = timePassed * this.refillRate
+    
+    this.tokens = Math.min(
+      this.capacity,
+      this.tokens + tokensToAdd
+    )
+    
+    this.lastRefill = now
+  }
+}
+```
+
+### Sliding Window
+```typescript
+class SlidingWindowRateLimiter {
+  private requests = new Map<string, number[]>()
+  
+  async isAllowed(
+    key: string,
+    limit: number,
+    windowMs: number
+  ): Promise<boolean> {
+    const now = Date.now()
+    const windowStart = now - windowMs
+    
+    // Get requests in current window
+    const timestamps = this.requests.get(key) || []
+    const validTimestamps = timestamps.filter(t => t > windowStart)
+    
+    if (validTimestamps.length < limit) {
+      validTimestamps.push(now)
+      this.requests.set(key, validTimestamps)
+      return true
+    }
+    
+    return false
+  }
+}
+```
+
+## Microservices Scaling
+
+### Service Discovery
+```typescript
+interface ServiceRegistry {
+  register(service: Service): void
+  deregister(serviceId: string): void
+  discover(serviceName: string): Service[]
+  healthCheck(): void
+}
+
+class ConsulRegistry implements ServiceRegistry {
+  async register(service: Service) {
+    await consul.agent.service.register({
+      id: service.id,
+      name: service.name,
+      address: service.host,
+      port: service.port,
+      check: {
+        http: `http://${service.host}:${service.port}/health`,
+        interval: '10s'
+      }
+    })
+  }
+  
+  async discover(serviceName: string): Service[] {
+    const { services } = await consul.health.service({
+      service: serviceName,
+      passing: true
+    })
+    
+    return services.map(s => ({
+      id: s.Service.ID,
+      name: s.Service.Service,
+      host: s.Service.Address,
+      port: s.Service.Port
+    }))
+  }
+}
+```
+
+### Circuit Breaker
+```typescript
+class CircuitBreaker {
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED'
+  private failureCount = 0
+  private successCount = 0
+  private nextAttempt = Date.now()
+  
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN')
+      }
+      this.state = 'HALF_OPEN'
+    }
+    
+    try {
+      const result = await fn()
+      this.onSuccess()
+      return result
+    } catch (error) {
+      this.onFailure()
+      throw error
+    }
+  }
+  
+  private onSuccess() {
+    this.failureCount = 0
+    
+    if (this.state === 'HALF_OPEN') {
+      this.successCount++
+      if (this.successCount >= 3) {
+        this.state = 'CLOSED'
+        this.successCount = 0
+      }
+    }
+  }
+  
+  private onFailure() {
+    this.failureCount++
+    this.successCount = 0
+    
+    if (this.failureCount >= 5) {
+      this.state = 'OPEN'
+      this.nextAttempt = Date.now() + 60000 // 1 minute
+    }
+  }
+}
+```
+
+## CDN & Edge Computing
+
+### Edge Caching
+```typescript
+// Cloudflare Workers example
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const cache = caches.default
+    
+    // Try cache first
+    let response = await cache.match(request)
+    
+    if (!response) {
+      // Cache miss - fetch from origin
+      response = await fetch(request)
+      
+      // Cache successful responses
+      if (response.ok) {
+        response = new Response(response.body, response)
+        response.headers.set('Cache-Control', 'max-age=3600')
+        await cache.put(request, response.clone())
+      }
+    }
+    
+    return response
+  }
+}
+```
+
+## Monitoring Scalability
+
+### Key Metrics
+- Response time (p50, p95, p99)
+- Throughput (requests/second)
+- Error rate
+- CPU usage
+- Memory usage
+- Database connections
+- Queue depth
+
+### Auto-scaling
+```yaml
+# Kubernetes Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+## Best Practices
+
+1. **Design for Scale from Day 1**
+2. **Use Stateless Services**
+3. **Implement Caching Strategically**
+4. **Monitor Everything**
+5. **Load Test Regularly**
+6. **Plan for Failure**
+7. **Use Asynchronous Processing**
+8. **Optimize Database Queries**
+9. **Implement Rate Limiting**
+10. **Use CDNs for Static Assets**
+

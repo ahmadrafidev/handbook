@@ -1,0 +1,406 @@
+---
+title: Monitoring and Logging
+description: Observability, logging strategies, and monitoring best practices
+---
+
+# Monitoring and Logging
+
+Monitoring and logging provide visibility into system behavior, performance, and issues.
+
+## Three Pillars of Observability
+
+### 1. Metrics
+Numerical measurements over time.
+
+### 2. Logs
+Timestamped records of events.
+
+### 3. Traces
+Request flows through distributed systems.
+
+## Logging Best Practices
+
+### Structured Logging
+```typescript
+import winston from 'winston'
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  defaultMeta: { service: 'user-service' },
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+})
+
+// ✅ Structured logs
+logger.info('User created', {
+  userId: user.id,
+  email: user.email,
+  timestamp: new Date().toISOString()
+})
+
+// ❌ Unstructured logs
+console.log('User ' + user.id + ' created with email ' + user.email)
+```
+
+### Log Levels
+```typescript
+logger.error('Critical error occurred', { error, context })
+logger.warn('Deprecated API used', { endpoint, caller })
+logger.info('User action completed', { action, userId })
+logger.debug('Function called', { params, result })
+logger.trace('Detailed execution flow', { step, data })
+```
+
+### What to Log
+
+#### ✅ DO Log:
+- Application errors and exceptions
+- Authentication attempts (success/failure)
+- Important business events
+- Performance metrics
+- External API calls
+- Database queries (in development)
+
+#### ❌ DON'T Log:
+- Passwords or secrets
+- Personal identification information (PII)
+- Credit card numbers
+- Session tokens
+- Full request/response bodies with sensitive data
+
+### Sensitive Data Handling
+```typescript
+function sanitizeForLogging(data: any) {
+  const sanitized = { ...data }
+  
+  // Remove sensitive fields
+  delete sanitized.password
+  delete sanitized.creditCard
+  delete sanitized.ssn
+  
+  // Mask partial data
+  if (sanitized.email) {
+    sanitized.email = maskEmail(sanitized.email)
+  }
+  
+  return sanitized
+}
+
+logger.info('User registered', sanitizeForLogging(userData))
+```
+
+## Application Monitoring
+
+### Metrics to Track
+
+#### System Metrics
+- CPU usage
+- Memory usage
+- Disk I/O
+- Network I/O
+
+#### Application Metrics
+- Request rate
+- Response time
+- Error rate
+- Active users
+- Queue depth
+
+### Custom Metrics
+```typescript
+import { Counter, Histogram, Gauge } from 'prom-client'
+
+// Counter: incrementing values
+const requestCounter = new Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status']
+})
+
+// Histogram: measure durations
+const requestDuration = new Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route']
+})
+
+// Gauge: current value
+const activeUsers = new Gauge({
+  name: 'active_users',
+  help: 'Number of currently active users'
+})
+
+// Usage
+app.use((req, res, next) => {
+  const start = Date.now()
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000
+    
+    requestCounter.inc({
+      method: req.method,
+      route: req.route?.path,
+      status: res.statusCode
+    })
+    
+    requestDuration.observe(
+      { method: req.method, route: req.route?.path },
+      duration
+    )
+  })
+  
+  next()
+})
+```
+
+## Error Tracking
+
+### Sentry Integration
+```typescript
+import * as Sentry from '@sentry/node'
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 1.0
+})
+
+// Capture exceptions
+try {
+  await riskyOperation()
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: {
+      section: 'payment'
+    },
+    extra: {
+      userId: user.id,
+      transactionId: transaction.id
+    }
+  })
+  throw error
+}
+
+// Capture messages
+Sentry.captureMessage('Something went wrong', 'warning')
+
+// Set user context
+Sentry.setUser({
+  id: user.id,
+  email: user.email
+})
+```
+
+## Distributed Tracing
+
+### OpenTelemetry
+```typescript
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express'
+
+const provider = new NodeTracerProvider()
+provider.register()
+
+registerInstrumentations({
+  instrumentations: [
+    new HttpInstrumentation(),
+    new ExpressInstrumentation()
+  ]
+})
+
+// Create custom spans
+import { trace } from '@opentelemetry/api'
+
+async function processOrder(orderId: string) {
+  const tracer = trace.getTracer('order-service')
+  const span = tracer.startSpan('processOrder')
+  
+  span.setAttribute('order.id', orderId)
+  
+  try {
+    // Business logic
+    await validateOrder(orderId)
+    await chargePayment(orderId)
+    await fulfillOrder(orderId)
+    
+    span.setStatus({ code: SpanStatusCode.OK })
+  } catch (error) {
+    span.recordException(error)
+    span.setStatus({ code: SpanStatusCode.ERROR })
+    throw error
+  } finally {
+    span.end()
+  }
+}
+```
+
+## Health Checks
+
+### Readiness & Liveness Probes
+```typescript
+app.get('/health/live', (req, res) => {
+  // Basic health check - is the app running?
+  res.status(200).json({ status: 'alive' })
+})
+
+app.get('/health/ready', async (req, res) => {
+  // Detailed health check - can the app serve requests?
+  try {
+    await Promise.all([
+      checkDatabase(),
+      checkRedis(),
+      checkExternalAPI()
+    ])
+    
+    res.status(200).json({
+      status: 'ready',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: 'healthy',
+        redis: 'healthy',
+        api: 'healthy'
+      }
+    })
+  } catch (error) {
+    res.status(503).json({
+      status: 'not ready',
+      error: error.message
+    })
+  }
+})
+```
+
+## Alerting
+
+### Alert Rules
+```typescript
+// Example alert configuration
+{
+  name: 'High Error Rate',
+  condition: 'error_rate > 5% for 5 minutes',
+  severity: 'critical',
+  notify: ['#incidents', 'oncall@company.com']
+}
+
+{
+  name: 'Slow Response Time',
+  condition: 'p95_latency > 2s for 10 minutes',
+  severity: 'warning',
+  notify: ['#engineering']
+}
+
+{
+  name: 'Low Disk Space',
+  condition: 'disk_usage > 85%',
+  severity: 'warning',
+  notify: ['#ops']
+}
+```
+
+### Alert Fatigue Prevention
+- Set appropriate thresholds
+- Use alert aggregation
+- Implement escalation policies
+- Regular alert review and tuning
+- Clear runbooks for each alert
+
+## Log Aggregation
+
+### ELK Stack (Elasticsearch, Logstash, Kibana)
+```typescript
+// Configure Winston to send to Logstash
+import { LogstashTransport } from 'winston-logstash-transport'
+
+logger.add(new LogstashTransport({
+  host: 'logstash.example.com',
+  port: 5000
+}))
+```
+
+### CloudWatch Logs
+```typescript
+import { CloudWatchLogsClient, PutLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs'
+
+const client = new CloudWatchLogsClient({ region: 'us-east-1' })
+
+async function logToCloudWatch(message: string) {
+  await client.send(new PutLogEventsCommand({
+    logGroupName: '/aws/application/my-app',
+    logStreamName: 'production',
+    logEvents: [{
+      message,
+      timestamp: Date.now()
+    }]
+  }))
+}
+```
+
+## Performance Monitoring
+
+### Real User Monitoring (RUM)
+```typescript
+import { init as initApm } from '@elastic/apm-rum'
+
+const apm = initApm({
+  serviceName: 'my-app',
+  serverUrl: 'https://apm.example.com',
+  environment: 'production'
+})
+
+// Track page loads
+apm.setInitialPageLoadName(window.location.pathname)
+
+// Track custom transactions
+const transaction = apm.startTransaction('checkout', 'process')
+// ... checkout logic
+transaction?.end()
+```
+
+### Synthetic Monitoring
+Automated tests that run regularly to check:
+- Endpoint availability
+- Response times
+- Critical user flows
+- SSL certificate expiration
+
+## Dashboard Design
+
+### Key Metrics Dashboard
+```
+┌─────────────────────────────────────────┐
+│  Request Rate       Error Rate          │
+│  1,234 req/min     0.05%                │
+├─────────────────────────────────────────┤
+│  P95 Latency       Active Users         │
+│  245ms             5,678                 │
+├─────────────────────────────────────────┤
+│  CPU Usage         Memory Usage         │
+│  45%               2.3GB / 4GB           │
+└─────────────────────────────────────────┘
+```
+
+## Best Practices
+
+1. **Use correlation IDs** to track requests across services
+2. **Implement log rotation** to manage disk space
+3. **Set up alerts** for critical metrics
+4. **Review logs regularly** for patterns
+5. **Use dashboards** for at-a-glance health
+6. **Document your metrics** and what they mean
+7. **Test your monitoring** (break things in staging)
+8. **Keep sensitive data out** of logs
+
+## Tools
+
+- **Logging**: Winston, Pino, Bunyan
+- **Metrics**: Prometheus, StatsD, DataDog
+- **Tracing**: Jaeger, Zipkin, OpenTelemetry
+- **Error Tracking**: Sentry, Rollbar, Bugsnag
+- **APM**: New Relic, DataDog, Elastic APM
+- **Log Aggregation**: ELK Stack, Splunk, CloudWatch
+

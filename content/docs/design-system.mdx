@@ -1,0 +1,128 @@
+---
+title: Design System
+description: Building consistent, scalable design systems for digital products
+---
+
+# Design System
+
+A design system is a collection of reusable components, guidelines, and standards that ensure consistency across products.
+
+## Core Components
+
+### Design Tokens
+```typescript
+const tokens = {
+  colors: {
+    primary: '#0070f3',
+    secondary: '#7928ca',
+    neutral: {
+      100: '#fafafa',
+      900: '#171717'
+    }
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px'
+  },
+  typography: {
+    fontFamily: {
+      sans: 'Inter, system-ui, sans-serif',
+      mono: 'Menlo, monospace'
+    },
+    fontSize: {
+      sm: '14px',
+      base: '16px',
+      lg: '18px',
+      xl: '20px'
+    }
+  }
+}
+```
+
+### Component Library
+- Buttons
+- Forms and inputs
+- Cards
+- Modals
+- Navigation
+- Typography
+- Icons
+
+## Design Principles
+
+### Consistency
+Use the same patterns and components throughout.
+
+### Accessibility
+- WCAG 2.1 AA compliance
+- Keyboard navigation
+- Screen reader support
+- Color contrast ratios
+
+### Scalability
+Design for growth and evolution.
+
+### Documentation
+Clear guidelines for usage and implementation.
+
+## Implementation
+
+### Component Structure
+```typescript
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+  onClick?: () => void
+  children: React.ReactNode
+}
+
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  ...props
+}: ButtonProps) {
+  // Implementation
+}
+```
+
+### Theming
+```typescript
+const lightTheme = {
+  background: '#ffffff',
+  text: '#000000'
+}
+
+const darkTheme = {
+  background: '#000000',
+  text: '#ffffff'
+}
+```
+
+## Tools & Libraries
+
+- **Figma**: Design and prototyping
+- **Storybook**: Component documentation
+- **Radix UI**: Unstyled, accessible components
+- **Tailwind CSS**: Utility-first CSS
+- **Shadcn UI**: Re-usable components
+
+## Governance
+
+- Design review process
+- Component contribution guidelines
+- Version management
+- Breaking change policy
+
+## Benefits
+
+- Faster development
+- Consistent user experience
+- Easier maintenance
+- Better collaboration between design and engineering
+- Reduced design debt
+

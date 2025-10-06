@@ -1,0 +1,103 @@
+---
+title: Commit Message
+description: Writing clear, meaningful commit messages that tell a story
+---
+
+# Commit Message
+
+Good commit messages are essential for understanding project history and collaborating effectively.
+
+## Conventional Commits
+
+### Format
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, semicolons, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+- `ci`: CI/CD changes
+
+## Examples
+
+### Good Commit Messages
+
+```
+feat(auth): add OAuth2 integration with Google
+
+Implemented Google OAuth2 authentication flow including:
+- Login button component
+- Token exchange service
+- User profile synchronization
+
+Closes #123
+```
+
+```
+fix(cart): resolve checkout calculation error
+
+Fixed rounding error in tax calculation that caused
+checkout totals to be incorrect for orders over $1000.
+
+The issue was caused by premature rounding before
+applying the tax multiplier.
+
+Fixes #456
+```
+
+```
+refactor: simplify user validation logic
+
+Extracted validation rules into separate functions
+for better testability and reusability.
+```
+
+### Avoid
+
+```
+"Fixed stuff"
+"WIP"
+"asdf"
+"Updated code"
+```
+
+## Best Practices
+
+### Do
+- Use imperative mood ("add" not "added")
+- Keep subject line under 50 characters
+- Separate subject from body with blank line
+- Wrap body at 72 characters
+- Explain what and why, not how
+
+### Don't
+- Mix multiple unrelated changes
+- Use generic messages
+- Include unnecessary details
+- Forget to reference issues/tickets
+
+## Atomic Commits
+
+Each commit should represent one logical change:
+- Easier to review
+- Easier to revert
+- Clearer history
+- Better for cherry-picking
+
+## Tools
+
+- Commitizen: Interactive commit message CLI
+- Commitlint: Enforce commit conventions
+- Git hooks: Validate messages before commit
+

@@ -1,0 +1,100 @@
+---
+title: Distributed Systems
+description: Principles and patterns for building reliable distributed systems
+---
+
+# Distributed Systems
+
+Distributed systems involve multiple computers working together to appear as a single coherent system.
+
+## Key Concepts
+
+### CAP Theorem
+You can only guarantee two of three:
+- **C**onsistency: All nodes see the same data
+- **A**vailability: Every request gets a response
+- **P**artition Tolerance: System works despite network failures
+
+### Eventual Consistency
+Data will become consistent over time, but may be temporarily inconsistent.
+
+### Strong Consistency
+All reads return the most recent write.
+
+## Common Challenges
+
+### Network Failures
+- Timeouts
+- Packet loss
+- Network partitions
+- Latency
+
+### Concurrent Operations
+- Race conditions
+- Deadlocks
+- Distributed transactions
+
+### Data Consistency
+- Replication lag
+- Conflict resolution
+- Version vectors
+
+## Patterns & Solutions
+
+### Service Discovery
+Automatically detect network locations of service instances.
+
+### Load Balancing
+Distribute requests across multiple servers.
+
+### Circuit Breaker
+Prevent cascading failures by stopping requests to failing services.
+
+### Saga Pattern
+Manage distributed transactions with compensating actions.
+
+### Event Sourcing
+Store state as sequence of events.
+
+### CQRS (Command Query Responsibility Segregation)
+Separate read and write models.
+
+## Communication Patterns
+
+### Synchronous
+- REST APIs
+- gRPC
+- GraphQL
+
+### Asynchronous
+- Message queues (RabbitMQ, SQS)
+- Pub/Sub (Redis, Kafka)
+- Event streaming
+
+## Consensus Algorithms
+
+### Raft
+Leader-based consensus for log replication.
+
+### Paxos
+Distributed consensus protocol.
+
+### Two-Phase Commit
+Coordinate distributed transactions.
+
+## Monitoring & Observability
+
+- Distributed tracing
+- Centralized logging
+- Metrics collection
+- Health checks
+
+## Best Practices
+
+- Design for failure
+- Implement retries with exponential backoff
+- Use idempotent operations
+- Monitor system health
+- Plan for scalability
+- Document system architecture
+

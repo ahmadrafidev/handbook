@@ -1,0 +1,93 @@
+---
+title: Software Architecture
+description: Architectural patterns, principles, and design decisions for scalable systems
+---
+
+# Software Architecture
+
+Software architecture defines the high-level structure of software systems and the discipline of creating such structures.
+
+## Architectural Patterns
+
+### Layered Architecture
+```
+Presentation Layer
+    ↓
+Business Logic Layer
+    ↓
+Data Access Layer
+    ↓
+Database
+```
+
+### Microservices
+- Independent, deployable services
+- Single responsibility
+- Decentralized data management
+- Service communication via APIs
+
+### Event-Driven Architecture
+- Asynchronous communication
+- Loose coupling
+- Event producers and consumers
+- Message queues/brokers
+
+### Hexagonal Architecture (Ports & Adapters)
+- Core business logic isolated
+- External dependencies as adapters
+- Testable and flexible
+
+## Design Principles
+
+### SOLID Principles
+- **S**ingle Responsibility Principle
+- **O**pen/Closed Principle
+- **L**iskov Substitution Principle
+- **I**nterface Segregation Principle
+- **D**ependency Inversion Principle
+
+### DRY (Don't Repeat Yourself)
+Avoid code duplication through abstraction and reusability.
+
+### KISS (Keep It Simple, Stupid)
+Favor simplicity over complexity.
+
+### YAGNI (You Aren't Gonna Need It)
+Don't add functionality until it's necessary.
+
+## Architecture Decision Records (ADRs)
+
+Document important architectural decisions:
+- Context: What is the issue?
+- Decision: What did we decide?
+- Consequences: What are the impacts?
+
+## Common Patterns
+
+### Repository Pattern
+Abstracts data access logic.
+
+### Factory Pattern
+Creates objects without specifying exact class.
+
+### Observer Pattern
+Defines subscription mechanism for events.
+
+### Strategy Pattern
+Defines family of algorithms, makes them interchangeable.
+
+## Trade-offs
+
+Every architectural decision involves trade-offs:
+- Performance vs Scalability
+- Consistency vs Availability (CAP theorem)
+- Complexity vs Flexibility
+- Cost vs Quality
+
+## Documentation
+
+- Architecture diagrams (C4 model)
+- Component relationships
+- Data flow diagrams
+- Deployment architecture
+

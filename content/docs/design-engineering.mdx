@@ -1,0 +1,517 @@
+---
+title: Design Engineering
+description: The intersection of design and engineering, building beautiful experiences
+---
+
+# Design Engineering
+
+Design engineering sits at the intersection of design and development, focusing on crafting exceptional user experiences through code.
+
+## Core Principles
+
+### Design Thinking
+- Empathy with users
+- Define problems clearly
+- Ideate multiple solutions
+- Prototype quickly
+- Test and iterate
+
+### Engineering Excellence
+- Clean, maintainable code
+- Performance optimization
+- Accessibility standards
+- Cross-browser compatibility
+
+## CSS & Styling
+
+### Modern CSS Techniques
+
+#### CSS Custom Properties
+```css
+:root {
+  --color-primary: #0070f3;
+  --color-secondary: #7928ca;
+  --spacing-unit: 8px;
+  --border-radius: 12px;
+  
+  /* Responsive values */
+  --container-width: min(1200px, 100% - 2rem);
+}
+
+.button {
+  background: var(--color-primary);
+  padding: calc(var(--spacing-unit) * 2);
+  border-radius: var(--border-radius);
+}
+```
+
+#### Grid & Flexbox
+```css
+/* Modern grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-unit);
+}
+
+/* Flexbox utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+#### Container Queries
+```css
+@container (min-width: 400px) {
+  .card {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+  }
+}
+```
+
+### Tailwind CSS Patterns
+```tsx
+// Composition
+const buttonClasses = cn(
+  'px-4 py-2 rounded-lg font-medium transition-colors',
+  'hover:bg-opacity-90 active:scale-95',
+  'focus:outline-none focus:ring-2 focus:ring-offset-2',
+  variant === 'primary' && 'bg-blue-600 text-white',
+  variant === 'secondary' && 'bg-gray-200 text-gray-900',
+  disabled && 'opacity-50 cursor-not-allowed'
+)
+
+// Dark mode
+<div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+  {/* Content */}
+</div>
+
+// Responsive design
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+  {/* Items */}
+</div>
+```
+
+## Animation & Motion
+
+### Framer Motion
+```tsx
+import { motion } from 'framer-motion'
+
+// Basic animation
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5 }}
+>
+  Content
+</motion.div>
+
+// Variants
+const variants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.4, 0, 0.2, 1]
+    }
+  }
+}
+
+<motion.div
+  variants={variants}
+  initial="hidden"
+  animate="visible"
+>
+  Content
+</motion.div>
+
+// Gesture animations
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+>
+  Click me
+</motion.button>
+```
+
+### CSS Animations
+```css
+/* Smooth transitions */
+.card {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Keyframe animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animated {
+  animation: fadeInUp 0.5s ease-out;
+}
+```
+
+## Micro-interactions
+
+### Loading States
+```tsx
+function Button({ isLoading, children, ...props }: ButtonProps) {
+  return (
+    <button disabled={isLoading} {...props}>
+      {isLoading ? (
+        <span className="flex items-center gap-2">
+          <Spinner />
+          Loading...
+        </span>
+      ) : (
+        children
+      )}
+    </button>
+  )
+}
+```
+
+### Toast Notifications
+```tsx
+import { toast } from 'sonner'
+
+// Success toast
+toast.success('Changes saved successfully')
+
+// Error toast
+toast.error('Something went wrong')
+
+// Custom toast
+toast.custom((t) => (
+  <div className="bg-white rounded-lg shadow-lg p-4">
+    <h3 className="font-semibold">Custom Notification</h3>
+    <p className="text-sm text-gray-600">With custom content</p>
+  </div>
+))
+```
+
+### Skeleton Screens
+```tsx
+function Skeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
+      <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+      <div className="h-32 bg-gray-200 rounded" />
+    </div>
+  )
+}
+```
+
+## Responsive Design
+
+### Mobile-First Approach
+```tsx
+// Tailwind mobile-first
+<div className="
+  p-4 
+  md:p-6 
+  lg:p-8
+  text-sm 
+  md:text-base 
+  lg:text-lg
+">
+  Content
+</div>
+
+// CSS mobile-first
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 3rem;
+  }
+}
+```
+
+### Fluid Typography
+```css
+/* Clamp for responsive sizing */
+h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+p {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+}
+```
+
+## Component Design
+
+### Atomic Design
+```
+Atoms: Button, Input, Label
+    ↓
+Molecules: FormField, SearchBar
+    ↓
+Organisms: LoginForm, Header
+    ↓
+Templates: DashboardLayout
+    ↓
+Pages: Dashboard
+```
+
+### Compound Components
+```tsx
+function Card({ children }: { children: React.ReactNode }) {
+  return <div className="card">{children}</div>
+}
+
+Card.Header = function CardHeader({ children }: { children: React.ReactNode }) {
+  return <div className="card-header">{children}</div>
+}
+
+Card.Body = function CardBody({ children }: { children: React.ReactNode }) {
+  return <div className="card-body">{children}</div>
+}
+
+// Usage
+<Card>
+  <Card.Header>Title</Card.Header>
+  <Card.Body>Content</Card.Body>
+</Card>
+```
+
+## Accessibility (a11y)
+
+### Semantic HTML
+```tsx
+// ✅ Use semantic elements
+<nav>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+
+<article>
+  <h1>Article Title</h1>
+  <p>Content...</p>
+</article>
+
+// ❌ Avoid div soup
+<div>
+  <div>
+    <div>Home</div>
+    <div>About</div>
+  </div>
+</div>
+```
+
+### ARIA Attributes
+```tsx
+<button
+  aria-label="Close modal"
+  aria-pressed={isPressed}
+  aria-expanded={isExpanded}
+  aria-controls="menu"
+>
+  <Icon />
+</button>
+
+<div role="alert" aria-live="polite">
+  {errorMessage}
+</div>
+```
+
+### Keyboard Navigation
+```tsx
+function Menu() {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        focusNext()
+        break
+      case 'ArrowUp':
+        focusPrevious()
+        break
+      case 'Escape':
+        closeMenu()
+        break
+    }
+  }
+  
+  return (
+    <div role="menu" onKeyDown={handleKeyDown}>
+      {/* Menu items */}
+    </div>
+  )
+}
+```
+
+## Performance
+
+### Image Optimization
+```tsx
+import Image from 'next/image'
+
+<Image
+  src="/hero.jpg"
+  alt="Hero image"
+  width={1200}
+  height={600}
+  priority
+  placeholder="blur"
+  blurDataURL="data:image/..."
+  sizes="(max-width: 768px) 100vw, 50vw"
+/>
+```
+
+### Code Splitting
+```tsx
+import dynamic from 'next/dynamic'
+
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <Skeleton />,
+  ssr: false
+})
+```
+
+### Virtualization
+```tsx
+import { useVirtualizer } from '@tanstack/react-virtual'
+
+function VirtualList({ items }: { items: string[] }) {
+  const parentRef = useRef<HTMLDivElement>(null)
+  
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50
+  })
+  
+  return (
+    <div ref={parentRef} className="h-screen overflow-auto">
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          position: 'relative'
+        }}
+      >
+        {virtualizer.getVirtualItems().map(virtualItem => (
+          <div
+            key={virtualItem.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualItem.start}px)`
+            }}
+          >
+            {items[virtualItem.index]}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+## Design Tokens
+
+### Token Structure
+```typescript
+export const tokens = {
+  colors: {
+    brand: {
+      primary: '#0070f3',
+      secondary: '#7928ca',
+      accent: '#ff0080'
+    },
+    semantic: {
+      success: '#00d9a3',
+      warning: '#f5a623',
+      error: '#ff4444',
+      info: '#0070f3'
+    },
+    neutral: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      // ...
+      900: '#171717'
+    }
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    '2xl': '48px'
+  },
+  typography: {
+    fontFamily: {
+      sans: 'Inter, system-ui, sans-serif',
+      mono: 'Fira Code, monospace'
+    },
+    fontSize: {
+      xs: '12px',
+      sm: '14px',
+      base: '16px',
+      lg: '18px',
+      xl: '20px',
+      '2xl': '24px',
+      '3xl': '30px',
+      '4xl': '36px'
+    },
+    fontWeight: {
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700
+    }
+  }
+} as const
+```
+
+## Tools & Resources
+
+- **Figma**: Design and prototyping
+- **Framer Motion**: React animations
+- **Radix UI**: Unstyled components
+- **Tailwind CSS**: Utility-first CSS
+- **Shadcn UI**: Component library
+- **React Aria**: Accessibility primitives
+- **Storybook**: Component development
+
+## Best Practices
+
+- Design with real content
+- Test on real devices
+- Prioritize performance
+- Build accessible by default
+- Use consistent spacing
+- Maintain visual hierarchy
+- Consider dark mode
+- Optimize for touch
+- Progressive enhancement
+

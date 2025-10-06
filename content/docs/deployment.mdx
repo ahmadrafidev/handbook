@@ -1,0 +1,174 @@
+---
+title: Deployment
+description: Modern deployment strategies, CI/CD pipelines, and production best practices
+---
+
+# Deployment
+
+Deployment is the process of releasing software to production environments safely and efficiently.
+
+## Deployment Strategies
+
+### Blue-Green Deployment
+```
+Blue Environment (Current)  →  Switch traffic  →  Green Environment (New)
+```
+- Zero downtime
+- Quick rollback
+- Double infrastructure cost
+
+### Canary Deployment
+```
+Production (100%) → Canary (5%) → Expand (50%) → Full (100%)
+```
+- Gradual rollout
+- Monitor metrics
+- Early issue detection
+
+### Rolling Deployment
+Update instances incrementally:
+```
+Instance 1 → Instance 2 → Instance 3 → Instance 4
+```
+
+### Feature Flags
+```typescript
+if (featureFlags.isEnabled('new-checkout')) {
+  return <NewCheckout />
+} else {
+  return <LegacyCheckout />
+}
+```
+
+## CI/CD Pipeline
+
+### Continuous Integration
+```yaml
+# GitHub Actions example
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run tests
+        run: pnpm test
+      - name: Run linter
+        run: pnpm lint
+```
+
+### Continuous Deployment
+```yaml
+deploy:
+  needs: test
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/main'
+  steps:
+    - name: Deploy to production
+      run: ./deploy.sh
+```
+
+## Infrastructure as Code
+
+### Terraform Example
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  
+  tags = {
+    Name = "WebServer"
+    Environment = "production"
+  }
+}
+```
+
+### Docker Compose
+```yaml
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+  db:
+    image: postgres:14
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+```
+
+## Kubernetes Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: myapp:latest
+        ports:
+        - containerPort: 3000
+```
+
+## Pre-Deployment Checklist
+
+- [ ] All tests passing
+- [ ] Code reviewed and approved
+- [ ] Documentation updated
+- [ ] Database migrations ready
+- [ ] Environment variables configured
+- [ ] Monitoring and alerts set up
+- [ ] Rollback plan prepared
+
+## Post-Deployment
+
+### Health Checks
+```typescript
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: process.env.APP_VERSION
+  })
+})
+```
+
+### Monitoring
+- Application metrics
+- Error rates
+- Response times
+- Resource utilization
+
+### Rollback Procedure
+Quick revert to previous version if issues detected.
+
+## Best Practices
+
+- Automate everything
+- Deploy frequently, in small batches
+- Use feature flags for risk mitigation
+- Monitor deployments closely
+- Practice rollbacks
+- Keep deployment scripts in version control
+- Use immutable infrastructure
+- Implement proper secrets management
+

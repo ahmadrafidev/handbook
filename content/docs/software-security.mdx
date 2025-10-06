@@ -1,0 +1,386 @@
+---
+title: Software Security
+description: Security best practices, common vulnerabilities, and defensive programming
+---
+
+# Software Security
+
+Security is critical for protecting user data, maintaining trust, and ensuring system integrity.
+
+## OWASP Top 10
+
+### 1. Broken Access Control
+```typescript
+// ❌ Insecure
+app.get('/api/users/:id', async (req, res) => {
+  const user = await db.user.findUnique({
+    where: { id: req.params.id }
+  })
+  res.json(user)
+})
+
+// ✅ Secure
+app.get('/api/users/:id', authenticate, async (req, res) => {
+  if (req.user.id !== req.params.id && !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  const user = await db.user.findUnique({
+    where: { id: req.params.id }
+  })
+  res.json(user)
+})
+```
+
+### 2. Cryptographic Failures
+```typescript
+import bcrypt from 'bcrypt'
+
+// Hash passwords
+const hashedPassword = await bcrypt.hash(password, 10)
+
+// Verify passwords
+const isValid = await bcrypt.compare(password, hashedPassword)
+
+// Encrypt sensitive data
+import crypto from 'crypto'
+
+const algorithm = 'aes-256-gcm'
+const key = crypto.randomBytes(32)
+const iv = crypto.randomBytes(16)
+
+function encrypt(text: string) {
+  const cipher = crypto.createCipheriv(algorithm, key, iv)
+  let encrypted = cipher.update(text, 'utf8', 'hex')
+  encrypted += cipher.final('hex')
+  const authTag = cipher.getAuthTag()
+  return { encrypted, authTag: authTag.toString('hex') }
+}
+```
+
+### 3. Injection
+```typescript
+// ❌ SQL Injection vulnerable
+const query = `SELECT * FROM users WHERE email = '${email}'`
+
+// ✅ Use parameterized queries
+const user = await db.user.findUnique({
+  where: { email }
+})
+
+// ✅ Use ORM
+const users = await prisma.user.findMany({
+  where: {
+    email: {
+      contains: searchTerm
+    }
+  }
+})
+```
+
+### 4. Insecure Design
+Design security from the start:
+- Threat modeling
+- Secure architecture patterns
+- Defense in depth
+- Principle of least privilege
+
+### 5. Security Misconfiguration
+```typescript
+// ❌ Insecure
+const app = express()
+app.use(cors({ origin: '*' }))
+
+// ✅ Secure
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(','),
+  credentials: true
+}))
+
+// Security headers
+import helmet from 'helmet'
+app.use(helmet())
+```
+
+### 6. Vulnerable Components
+```bash
+# Audit dependencies
+npm audit
+pnpm audit
+
+# Update dependencies
+npm update
+pnpm update
+
+# Use tools like
+# - Snyk
+# - Dependabot
+# - Renovate
+```
+
+### 7. Authentication Failures
+```typescript
+// Implement proper authentication
+import jwt from 'jsonwebtoken'
+
+function generateToken(userId: string) {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_SECRET!,
+    { expiresIn: '1h' }
+  )
+}
+
+function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!)
+  } catch (error) {
+    throw new Error('Invalid token')
+  }
+}
+
+// Rate limiting
+import rateLimit from 'express-rate-limit'
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+})
+
+app.use('/api/', limiter)
+```
+
+### 8. Software and Data Integrity
+```typescript
+// Verify file integrity
+import crypto from 'crypto'
+
+function calculateHash(file: Buffer): string {
+  return crypto
+    .createHash('sha256')
+    .update(file)
+    .digest('hex')
+}
+
+// Verify uploads
+const uploadedHash = calculateHash(file)
+if (uploadedHash !== expectedHash) {
+  throw new Error('File integrity check failed')
+}
+```
+
+### 9. Logging and Monitoring Failures
+```typescript
+// Proper logging
+import winston from 'winston'
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+})
+
+// Log security events
+logger.warn('Failed login attempt', {
+  email: email,
+  ip: req.ip,
+  timestamp: new Date()
+})
+```
+
+### 10. Server-Side Request Forgery (SSRF)
+```typescript
+// Validate and sanitize URLs
+import { URL } from 'url'
+
+function isAllowedUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString)
+    
+    // Only allow specific protocols
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      return false
+    }
+    
+    // Block private IP ranges
+    const hostname = url.hostname
+    if (
+      hostname === 'localhost' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.')
+    ) {
+      return false
+    }
+    
+    return true
+  } catch {
+    return false
+  }
+}
+```
+
+## Authentication & Authorization
+
+### JWT Best Practices
+```typescript
+interface TokenPayload {
+  userId: string
+  role: string
+}
+
+// Short-lived access token
+const accessToken = jwt.sign(
+  payload,
+  process.env.ACCESS_TOKEN_SECRET!,
+  { expiresIn: '15m' }
+)
+
+// Long-lived refresh token
+const refreshToken = jwt.sign(
+  payload,
+  process.env.REFRESH_TOKEN_SECRET!,
+  { expiresIn: '7d' }
+)
+```
+
+### Role-Based Access Control (RBAC)
+```typescript
+enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+  MODERATOR = 'moderator'
+}
+
+function authorize(allowedRoles: Role[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+    
+    next()
+  }
+}
+
+app.delete('/api/users/:id', authorize([Role.ADMIN]), deleteUser)
+```
+
+## Input Validation
+
+### Zod Schema Validation
+```typescript
+import { z } from 'zod'
+
+const userSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(100),
+  age: z.number().min(18).max(120),
+  username: z.string().regex(/^[a-zA-Z0-9_]+$/)
+})
+
+function validateInput(data: unknown) {
+  try {
+    return userSchema.parse(data)
+  } catch (error) {
+    throw new ValidationError('Invalid input')
+  }
+}
+```
+
+### Sanitization
+```typescript
+import DOMPurify from 'isomorphic-dompurify'
+
+// Sanitize HTML
+const clean = DOMPurify.sanitize(dirty)
+
+// Escape SQL
+import { escape } from 'sqlstring'
+const safe = escape(userInput)
+```
+
+## Cross-Site Scripting (XSS)
+
+### Prevention
+```tsx
+// React automatically escapes
+<div>{userInput}</div>
+
+// Be careful with dangerouslySetInnerHTML
+<div dangerouslySetInnerHTML={{ 
+  __html: DOMPurify.sanitize(html) 
+}} />
+
+// Content Security Policy
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'"],
+    styleSrc: ["'self'", "'unsafe-inline'"]
+  }
+}))
+```
+
+## Cross-Site Request Forgery (CSRF)
+
+### CSRF Token
+```typescript
+import csrf from 'csurf'
+
+const csrfProtection = csrf({ cookie: true })
+
+app.get('/form', csrfProtection, (req, res) => {
+  res.render('form', { csrfToken: req.csrfToken() })
+})
+
+app.post('/process', csrfProtection, (req, res) => {
+  // Process form
+})
+```
+
+## Secrets Management
+
+### Environment Variables
+```typescript
+// ❌ Never commit secrets
+const apiKey = 'sk_live_abc123'
+
+// ✅ Use environment variables
+const apiKey = process.env.API_KEY
+
+// ✅ Use secret management services
+// - AWS Secrets Manager
+// - HashiCorp Vault
+// - Azure Key Vault
+```
+
+## Security Checklist
+
+- [ ] Use HTTPS everywhere
+- [ ] Implement proper authentication
+- [ ] Validate and sanitize all inputs
+- [ ] Use parameterized queries
+- [ ] Keep dependencies updated
+- [ ] Implement rate limiting
+- [ ] Use security headers
+- [ ] Hash passwords with bcrypt/argon2
+- [ ] Implement CSRF protection
+- [ ] Log security events
+- [ ] Regular security audits
+- [ ] Principle of least privilege
+- [ ] Data encryption at rest and in transit
+
+## Tools
+
+- **SAST**: SonarQube, Checkmarx
+- **DAST**: OWASP ZAP, Burp Suite
+- **Dependency Scanning**: Snyk, npm audit
+- **Secrets Scanning**: GitGuardian, TruffleHog
+

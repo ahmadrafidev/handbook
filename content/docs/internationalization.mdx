@@ -1,0 +1,469 @@
+---
+title: Internationalization
+description: Building applications for global audiences with i18n and l10n
+---
+
+# Internationalization
+
+Internationalization (i18n) is the process of designing applications to support multiple languages and cultures.
+
+## Core Concepts
+
+### Internationalization (i18n)
+Designing software to be adaptable to different languages and regions.
+
+### Localization (l10n)
+Adapting software for a specific region or language.
+
+### Globalization (g11n)
+The combination of i18n and l10n.
+
+## Next.js i18n
+
+### next-intl Setup
+```typescript
+// middleware.ts
+import createMiddleware from 'next-intl/middleware'
+
+export default createMiddleware({
+  locales: ['en', 'es', 'fr', 'de', 'ja'],
+  defaultLocale: 'en'
+})
+
+export const config = {
+  matcher: ['/((?!api|_next|.*\\..*).*)']
+}
+```
+
+### Translation Files
+```json
+// messages/en.json
+{
+  "common": {
+    "welcome": "Welcome",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Something went wrong"
+  }
+}
+
+// messages/es.json
+{
+  "common": {
+    "welcome": "Bienvenido",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  },
+  "errors": {
+    "notFound": "Página no encontrada",
+    "serverError": "Algo salió mal"
+  }
+}
+```
+
+### Using Translations
+```tsx
+import { useTranslations } from 'next-intl'
+
+export default function HomePage() {
+  const t = useTranslations('common')
+  
+  return (
+    <div>
+      <h1>{t('welcome')}</h1>
+      <button>{t('signIn')}</button>
+    </div>
+  )
+}
+```
+
+### Dynamic Values
+```json
+{
+  "greeting": "Hello, {name}!",
+  "items": "You have {count, plural, =0 {no items} =1 {one item} other {# items}}",
+  "lastSeen": "Last seen {date, date, medium} at {date, time, short}"
+}
+```
+
+```tsx
+const t = useTranslations()
+
+t('greeting', { name: 'John' })
+// "Hello, John!"
+
+t('items', { count: 0 })
+// "You have no items"
+
+t('items', { count: 5 })
+// "You have 5 items"
+
+t('lastSeen', { date: new Date() })
+// "Last seen Jan 15, 2024 at 3:45 PM"
+```
+
+## Formatting
+
+### Numbers
+```typescript
+import { useFormatter } from 'next-intl'
+
+function PriceDisplay({ amount }: { amount: number }) {
+  const format = useFormatter()
+  
+  return (
+    <div>
+      {/* Currency */}
+      {format.number(amount, {
+        style: 'currency',
+        currency: 'USD'
+      })}
+      
+      {/* Percentage */}
+      {format.number(0.15, {
+        style: 'percent'
+      })}
+      
+      {/* With specific precision */}
+      {format.number(1234.5678, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}
+    </div>
+  )
+}
+```
+
+### Dates
+```typescript
+function DateDisplay({ date }: { date: Date }) {
+  const format = useFormatter()
+  
+  return (
+    <div>
+      {/* Short format */}
+      {format.dateTime(date, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })}
+      
+      {/* Relative time */}
+      {format.relativeTime(date)}
+      
+      {/* Time only */}
+      {format.dateTime(date, {
+        hour: 'numeric',
+        minute: 'numeric'
+      })}
+    </div>
+  )
+}
+```
+
+### Lists
+```typescript
+const items = ['apples', 'oranges', 'bananas']
+
+format.list(items, { type: 'conjunction' })
+// "apples, oranges, and bananas"
+
+format.list(items, { type: 'disjunction' })
+// "apples, oranges, or bananas"
+```
+
+## Locale Detection
+
+### Browser Detection
+```typescript
+function detectLocale(): string {
+  // Browser language
+  const browserLang = navigator.language
+  
+  // Supported locales
+  const supportedLocales = ['en', 'es', 'fr', 'de', 'ja']
+  
+  // Match browser language to supported locale
+  const locale = supportedLocales.find(loc => 
+    browserLang.startsWith(loc)
+  )
+  
+  return locale || 'en'
+}
+```
+
+### Accept-Language Header
+```typescript
+// In middleware or API route
+function getPreferredLocale(request: Request): string {
+  const acceptLanguage = request.headers.get('accept-language')
+  
+  if (!acceptLanguage) return 'en'
+  
+  // Parse Accept-Language header
+  const languages = acceptLanguage
+    .split(',')
+    .map(lang => {
+      const [locale, q = '1'] = lang.trim().split(';q=')
+      return { locale: locale.split('-')[0], quality: parseFloat(q) }
+    })
+    .sort((a, b) => b.quality - a.quality)
+  
+  const supportedLocales = ['en', 'es', 'fr', 'de', 'ja']
+  
+  for (const { locale } of languages) {
+    if (supportedLocales.includes(locale)) {
+      return locale
+    }
+  }
+  
+  return 'en'
+}
+```
+
+## RTL Support
+
+### CSS for RTL
+```css
+/* Logical properties */
+.container {
+  padding-inline-start: 1rem;
+  padding-inline-end: 1rem;
+  margin-inline: auto;
+}
+
+/* Direction-specific styles */
+[dir="rtl"] .icon {
+  transform: scaleX(-1);
+}
+```
+
+### React RTL
+```tsx
+import { useLocale } from 'next-intl'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const locale = useLocale()
+  const isRTL = ['ar', 'he', 'fa'].includes(locale)
+  
+  return (
+    <html lang={locale} dir={isRTL ? 'rtl' : 'ltr'}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+## Content Management
+
+### Structured Content
+```typescript
+// Type-safe translations
+type Messages = {
+  common: {
+    welcome: string
+    signIn: string
+  }
+  errors: {
+    notFound: string
+    serverError: string
+  }
+}
+
+declare global {
+  interface IntlMessages extends Messages {}
+}
+```
+
+### Markdown Content
+```typescript
+// content/en/about.mdx
+import { getTranslations } from 'next-intl/server'
+
+export default async function AboutPage() {
+  const t = await getTranslations('about')
+  
+  return (
+    <div>
+      <h1>{t('title')}</h1>
+      {/* Render markdown content */}
+    </div>
+  )
+}
+```
+
+## Language Switcher
+
+### Locale Switcher Component
+```tsx
+'use client'
+
+import { useLocale } from 'next-intl'
+import { usePathname, useRouter } from 'next/navigation'
+
+const languages = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' }
+]
+
+export function LanguageSwitcher() {
+  const locale = useLocale()
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  const handleLocaleChange = (newLocale: string) => {
+    // Remove current locale from pathname
+    const pathWithoutLocale = pathname.replace(`/${locale}`, '')
+    
+    // Navigate to new locale
+    router.push(`/${newLocale}${pathWithoutLocale}`)
+  }
+  
+  return (
+    <select
+      value={locale}
+      onChange={(e) => handleLocaleChange(e.target.value)}
+      className="px-3 py-2 rounded-md border"
+    >
+      {languages.map((lang) => (
+        <option key={lang.code} value={lang.code}>
+          {lang.flag} {lang.name}
+        </option>
+      ))}
+    </select>
+  )
+}
+```
+
+## Best Practices
+
+### Text Handling
+```typescript
+// ❌ Don't concatenate strings
+const message = t('welcome') + ' ' + userName
+
+// ✅ Use placeholders
+const message = t('welcomeUser', { name: userName })
+
+// ❌ Don't hardcode punctuation
+const text = question + '?'
+
+// ✅ Include punctuation in translations
+t('question') // Already includes "?"
+```
+
+### Avoid String Manipulation
+```typescript
+// ❌ Don't manipulate translated text
+const upperCased = t('button').toUpperCase()
+
+// ✅ Create separate translations
+t('buttonUppercase')
+```
+
+### Handle Plurals Properly
+```json
+{
+  "items": "{count, plural, =0 {No items} =1 {One item} other {{count} items}}"
+}
+```
+
+### Date and Time
+Always use locale-aware formatting for dates and times.
+
+### Sort Order
+Different languages have different sorting rules:
+```typescript
+const sorted = items.sort((a, b) => 
+  a.localeCompare(b, locale)
+)
+```
+
+## Testing
+
+### Test with Different Locales
+```typescript
+import { render } from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
+
+function renderWithLocale(component: React.ReactElement, locale = 'en') {
+  const messages = require(`../messages/${locale}.json`)
+  
+  return render(
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {component}
+    </NextIntlClientProvider>
+  )
+}
+
+test('displays welcome message', () => {
+  const { getByText } = renderWithLocale(<HomePage />, 'en')
+  expect(getByText('Welcome')).toBeInTheDocument()
+})
+
+test('displays welcome message in Spanish', () => {
+  const { getByText } = renderWithLocale(<HomePage />, 'es')
+  expect(getByText('Bienvenido')).toBeInTheDocument()
+})
+```
+
+## SEO for i18n
+
+### hreflang Tags
+```tsx
+export async function generateMetadata({
+  params: { locale }
+}: {
+  params: { locale: string }
+}) {
+  const baseUrl = 'https://example.com'
+  
+  return {
+    alternates: {
+      canonical: `${baseUrl}/${locale}`,
+      languages: {
+        'en': `${baseUrl}/en`,
+        'es': `${baseUrl}/es`,
+        'fr': `${baseUrl}/fr`,
+        'x-default': `${baseUrl}/en`
+      }
+    }
+  }
+}
+```
+
+## Tools
+
+- **next-intl**: React/Next.js i18n
+- **react-i18next**: React i18n
+- **FormatJS**: ICU message formatting
+- **Crowdin**: Translation management
+- **Lokalise**: Localization platform
+- **POEditor**: Translation management
+
+## Considerations
+
+- Text expansion (e.g., German text is ~30% longer)
+- Character sets and fonts
+- Currency and number formats
+- Date and time formats
+- Keyboard layouts
+- Cultural sensitivities
+- Legal requirements (GDPR, etc.)
+

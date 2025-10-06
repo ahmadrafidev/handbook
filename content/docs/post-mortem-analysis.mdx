@@ -1,0 +1,430 @@
+---
+title: Post Mortem Analysis
+description: Learning from incidents through blameless post-mortems
+---
+
+# Post Mortem Analysis
+
+Post-mortems are structured reviews of incidents that help teams learn and improve.
+
+## What is a Post-Mortem?
+
+A post-mortem is a written record of an incident that includes:
+- What happened
+- Why it happened
+- How it was resolved
+- What we learned
+- How to prevent it
+
+## Blameless Culture
+
+### Core Principles
+- **No blame**: Focus on systems, not people
+- **Psychological safety**: Safe to admit mistakes
+- **Learning opportunity**: Every incident teaches us
+- **Continuous improvement**: Use insights to improve
+
+### Why Blameless?
+```
+❌ Blame Culture:
+"Who broke production?"
+→ People hide mistakes
+→ Less learning
+→ Slower improvement
+
+✅ Blameless Culture:
+"What systemic issues led to this?"
+→ People share openly
+→ More learning
+→ Faster improvement
+```
+
+## Post-Mortem Template
+
+### Basic Structure
+```markdown
+# Post-Mortem: [Incident Title]
+
+**Date:** YYYY-MM-DD
+**Duration:** X hours Y minutes
+**Severity:** Critical | High | Medium | Low
+**Status:** Draft | Under Review | Published
+**Author:** [Name]
+**Reviewers:** [Names]
+
+## Executive Summary
+
+One paragraph summary of the incident, impact, and resolution.
+
+## Timeline
+
+All times in UTC.
+
+**2024-01-15**
+- 14:23 - Alert fired: High error rate on API
+- 14:25 - Engineer paged, incident channel created
+- 14:30 - Investigation began
+- 14:45 - Root cause identified: Database connection pool exhausted
+- 15:00 - Fix deployed: Increased pool size
+- 15:15 - Service recovered
+- 15:30 - Monitoring confirmed stability
+
+## Impact
+
+### Users Affected
+- 45,000 users (approximately 30% of active users)
+- 500 enterprise customers
+
+### Business Impact
+- $50,000 in estimated lost revenue
+- 2,500 support tickets
+- Negative social media mentions
+
+### Technical Impact
+- API response time: 200ms → 30,000ms
+- Error rate: 0.1% → 45%
+- Database connections: 100 → 1,000 (max limit)
+
+## Root Cause
+
+### What Happened
+A sudden spike in traffic (3x normal) caused the database connection pool to be exhausted. New requests couldn't acquire connections and timed out.
+
+### Why It Happened
+1. **Traffic spike**: Product launch drove unexpected traffic
+2. **Insufficient capacity**: Connection pool sized for normal load
+3. **No auto-scaling**: Pool size was hardcoded
+4. **Monitoring gap**: No alert for connection pool saturation
+5. **Load testing gap**: Launch traffic not load tested
+
+### Contributing Factors
+- Marketing campaign timing not communicated to engineering
+- Previous capacity planning didn't account for product launches
+- Lack of circuit breakers to fail gracefully
+
+## Resolution
+
+### Immediate Actions
+1. Increased database connection pool: 100 → 500
+2. Restarted application servers to clear stuck connections
+3. Enabled connection pooling metrics
+
+### Short-term Fixes (Within 1 week)
+- [ ] Implement auto-scaling for connection pool
+- [ ] Add alerts for connection pool utilization (>80%)
+- [ ] Add circuit breakers to prevent cascading failures
+- [ ] Create runbook for similar incidents
+
+### Long-term Improvements (Within 1 month)
+- [ ] Implement connection pooling best practices
+- [ ] Set up load testing pipeline
+- [ ] Establish launch checklist with capacity planning
+- [ ] Improve communication between marketing and engineering
+
+## What Went Well
+
+- **Fast detection**: Alert fired within 2 minutes
+- **Quick escalation**: Right people paged immediately
+- **Clear communication**: Regular updates in incident channel
+- **Good collaboration**: Multiple teams worked together
+- **Fast recovery**: Service restored in under 1 hour
+
+## What Could Be Better
+
+- **Prevention**: Could have been prevented with load testing
+- **Monitoring**: Connection pool metrics weren't monitored
+- **Communication**: Marketing didn't inform engineering of launch
+- **Documentation**: No runbook for connection pool issues
+- **Capacity**: Pool size wasn't reviewed before launch
+
+## Lessons Learned
+
+1. **Load test launches**: Always load test before product launches
+2. **Monitor resources**: Track all critical resource pools
+3. **Cross-team communication**: Establish launch communication protocol
+4. **Fail gracefully**: Implement circuit breakers and backpressure
+5. **Capacity planning**: Review capacity before major events
+
+## Action Items
+
+| Action | Owner | Due Date | Status |
+|--------|-------|----------|--------|
+| Implement connection pool auto-scaling | @john | 2024-01-22 | ✅ Done |
+| Add connection pool alerts | @jane | 2024-01-20 | ✅ Done |
+| Create launch checklist | @mike | 2024-01-25 | 🚧 In Progress |
+| Set up load testing pipeline | @sarah | 2024-02-01 | 📋 Todo |
+| Document incident response runbook | @alex | 2024-01-30 | 📋 Todo |
+
+## References
+
+- [Incident #1234](https://incidents.example.com/1234)
+- [Monitoring Dashboard](https://grafana.example.com/d/abc)
+- [Architecture Diagram](https://drive.example.com/diagram)
+- [Load Testing Results](https://load-test.example.com/results)
+```
+
+## Example Post-Mortem
+
+```markdown
+# Post-Mortem: Payment Processing Outage
+
+**Date:** 2024-01-15
+**Duration:** 2 hours 15 minutes
+**Severity:** Critical
+**Author:** Jane Smith
+
+## Executive Summary
+
+On January 15, 2024, our payment processing system experienced a complete outage lasting 2 hours and 15 minutes. The outage affected all payment methods and impacted approximately 10,000 transactions. The root cause was an expired SSL certificate on our payment gateway. Total estimated impact: $150,000 in lost revenue.
+
+## Timeline (UTC)
+
+- **10:00** - SSL certificate expires (unnoticed)
+- **10:15** - First payment failure reported by customer
+- **10:20** - Alert fires: 100% payment error rate
+- **10:22** - On-call engineer paged
+- **10:25** - Incident declared, war room created
+- **10:30** - Investigation begins
+- **10:45** - Checked payment gateway logs
+- **11:00** - Discovered SSL certificate error
+- **11:15** - New certificate purchased and generated
+- **11:30** - Certificate deployed to production
+- **11:45** - Payment processing restored
+- **12:00** - Monitoring confirms stability
+- **12:15** - Incident resolved
+
+## Impact
+
+### User Impact
+- 10,000 failed transactions
+- 2,000 abandoned carts
+- 500 support tickets
+- Negative reviews on social media
+
+### Business Impact
+- $150,000 estimated lost revenue
+- Reputational damage
+- Lost customer trust
+- 15 enterprise customers complained
+
+### Technical Metrics
+- Payment success rate: 99.9% → 0%
+- Error rate: 0.1% → 100%
+- Support ticket volume: 50/hour → 500/hour
+
+## Root Cause
+
+### What Happened
+The SSL certificate for our payment gateway expired at 10:00 UTC. All HTTPS connections to the payment processor failed with a certificate validation error, causing 100% of payments to fail.
+
+### Why It Happened
+1. **No renewal reminder**: Certificate expiry not tracked
+2. **No monitoring**: No alert for certificate expiry
+3. **Manual process**: Certificate renewal was manual
+4. **Knowledge gap**: Only one person knew about renewal
+5. **No automation**: No automated certificate rotation
+
+### Why We Didn't Catch It
+- Certificate expiry was not monitored
+- No alerts configured for SSL issues
+- Load testing used test environment (different cert)
+- No pre-production validation of certificates
+
+## Resolution
+
+### Immediate Fix
+1. Purchased new SSL certificate
+2. Generated CSR and private key
+3. Deployed certificate to production gateway
+4. Validated HTTPS connections working
+5. Monitored payment success rate recovery
+
+### Preventing Recurrence
+
+#### Short-term (This week)
+- [x] Set up certificate expiry monitoring
+- [x] Add alerts 30 days before expiry
+- [x] Document certificate renewal process
+- [x] Create runbook for certificate issues
+
+#### Long-term (This month)
+- [ ] Implement automated certificate renewal (Let's Encrypt)
+- [ ] Set up certificate inventory system
+- [ ] Add certificate validation to CI/CD
+- [ ] Establish on-call playbook for SSL issues
+
+## What Went Well
+
+✅ **Fast response**: Engineer responded in 2 minutes
+✅ **Clear communication**: Regular updates to stakeholders
+✅ **Good documentation**: Detailed incident log maintained
+✅ **Team collaboration**: Multiple teams worked together
+✅ **Customer service**: Support team handled inquiries well
+
+## What Could Be Better
+
+❌ **Prevention**: Should have been caught beforehand
+❌ **Monitoring**: No certificate expiry monitoring
+❌ **Automation**: Manual certificate management
+❌ **Knowledge**: Single point of failure (one person knew)
+❌ **Testing**: Production-like SSL config not tested
+
+## Lessons Learned
+
+### 1. Monitor Everything Critical
+If it can cause an outage, monitor it. SSL certificates are critical infrastructure.
+
+### 2. Automate Manual Processes
+Manual processes are error-prone. Automate certificate renewal.
+
+### 3. Share Knowledge
+Don't let critical knowledge live in one person's head.
+
+### 4. Test Realistically
+Test environment should match production, including certificates.
+
+### 5. Have Runbooks
+Document resolution steps for common failure scenarios.
+
+## Action Items
+
+| Action | Owner | Due | Status |
+|--------|-------|-----|--------|
+| Set up cert expiry monitoring | @jane | Jan 18 | ✅ Done |
+| Implement Let's Encrypt | @john | Jan 25 | 🚧 In Progress |
+| Create cert inventory | @mike | Jan 22 | ✅ Done |
+| Document renewal process | @sarah | Jan 20 | ✅ Done |
+| Add SSL tests to CI/CD | @alex | Jan 30 | 📋 Todo |
+| Create SSL runbook | @jane | Jan 25 | 📋 Todo |
+
+## Metrics
+
+### Before Incident
+- Payment success rate: 99.9%
+- Average payment time: 1.2s
+- Error rate: 0.1%
+
+### During Incident
+- Payment success rate: 0%
+- All payments failing
+- Error rate: 100%
+
+### After Resolution
+- Payment success rate: 99.9%
+- Average payment time: 1.2s
+- Error rate: 0.1%
+
+## Follow-up
+
+- [ ] Share post-mortem with company (Jan 20)
+- [ ] Present learnings at engineering all-hands (Jan 25)
+- [ ] Update incident response procedures (Jan 30)
+- [ ] Schedule 30-day review of action items (Feb 15)
+```
+
+## Post-Mortem Process
+
+### 1. Immediate Aftermath
+```
+Incident resolved → Gather data → Schedule post-mortem meeting
+```
+
+### 2. Draft Phase
+```
+Author writes initial draft → Include timeline and impact
+```
+
+### 3. Review Phase
+```
+Team reviews → Add perspectives → Refine action items
+```
+
+### 4. Publication
+```
+Finalize document → Share with stakeholders → Track action items
+```
+
+### 5. Follow-up
+```
+Review in 30 days → Verify actions completed → Share learnings
+```
+
+## Best Practices
+
+### During Incident
+- Keep detailed timeline
+- Save logs and metrics
+- Take screenshots
+- Document decisions made
+
+### Writing Post-Mortem
+- Write within 48 hours while fresh
+- Be specific and factual
+- Focus on systems, not people
+- Include what went well
+- Make action items concrete
+
+### After Post-Mortem
+- Share widely in organization
+- Track action items to completion
+- Review effectiveness of changes
+- Update processes based on learnings
+
+## Common Pitfalls
+
+### ❌ Blaming Individuals
+"John deployed bad code"
+→ "Deployment lacked sufficient testing"
+
+### ❌ Being Vague
+"We need better monitoring"
+→ "Add alerts for CPU >80% and memory >90%"
+
+### ❌ Too Many Actions
+20 action items that never get done
+→ 3-5 high-impact actions with owners
+
+### ❌ No Follow-through
+Action items created but not tracked
+→ Regular review until completion
+
+## Severity Levels
+
+### Critical (P0)
+- Complete service outage
+- Data loss or corruption
+- Security breach
+- >50% users affected
+
+### High (P1)
+- Major feature unavailable
+- Significant performance degradation
+- 10-50% users affected
+
+### Medium (P2)
+- Minor feature issues
+- Some users affected
+- Workaround available
+
+### Low (P3)
+- Cosmetic issues
+- Minimal impact
+- Few users affected
+
+## Tools
+
+- **Incident.io**: Incident management
+- **PagerDuty**: On-call and alerting
+- **Confluence**: Post-mortem storage
+- **Jira**: Action item tracking
+- **Slack**: Incident communication
+
+## Post-Mortem Culture
+
+Build a culture where:
+- Post-mortems are celebrated, not dreaded
+- Sharing mistakes is encouraged
+- Learning is prioritized
+- Systems improve continuously
+- Teams grow together
+

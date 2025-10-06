@@ -1,0 +1,282 @@
+---
+title: Testing
+description: Testing strategies, best practices, and tools for quality software
+---
+
+# Testing
+
+Testing ensures code quality, prevents regressions, and enables confident refactoring.
+
+## Testing Pyramid
+
+```
+        /\
+       /E2E\
+      /------\
+     /  API   \
+    /----------\
+   /    Unit    \
+  /--------------\
+```
+
+### Unit Tests (70%)
+Test individual functions and components in isolation.
+
+### Integration Tests (20%)
+Test how multiple units work together.
+
+### End-to-End Tests (10%)
+Test complete user workflows.
+
+## Unit Testing
+
+### Example with Jest
+```typescript
+// sum.ts
+export function sum(a: number, b: number): number {
+  return a + b
+}
+
+// sum.test.ts
+import { sum } from './sum'
+
+describe('sum', () => {
+  it('adds two numbers correctly', () => {
+    expect(sum(2, 3)).toBe(5)
+  })
+
+  it('handles negative numbers', () => {
+    expect(sum(-1, 1)).toBe(0)
+  })
+})
+```
+
+### Component Testing (React)
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import { Button } from './Button'
+
+describe('Button', () => {
+  it('renders with correct text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByText('Click me')).toBeInTheDocument()
+  })
+
+  it('calls onClick when clicked', () => {
+    const handleClick = jest.fn()
+    render(<Button onClick={handleClick}>Click me</Button>)
+    
+    fireEvent.click(screen.getByText('Click me'))
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('is disabled when disabled prop is true', () => {
+    render(<Button disabled>Click me</Button>)
+    expect(screen.getByRole('button')).toBeDisabled()
+  })
+})
+```
+
+## Integration Testing
+
+### API Testing
+```typescript
+describe('User API', () => {
+  it('creates a new user', async () => {
+    const response = await request(app)
+      .post('/api/users')
+      .send({
+        email: 'test@example.com',
+        name: 'Test User'
+      })
+    
+    expect(response.status).toBe(201)
+    expect(response.body).toMatchObject({
+      email: 'test@example.com',
+      name: 'Test User'
+    })
+  })
+})
+```
+
+### Database Testing
+```typescript
+describe('UserRepository', () => {
+  beforeEach(async () => {
+    await clearDatabase()
+  })
+
+  it('saves user to database', async () => {
+    const user = await userRepository.create({
+      email: 'test@example.com',
+      name: 'Test User'
+    })
+    
+    const found = await userRepository.findById(user.id)
+    expect(found).toEqual(user)
+  })
+})
+```
+
+## End-to-End Testing
+
+### Playwright Example
+```typescript
+import { test, expect } from '@playwright/test'
+
+test('user can complete checkout flow', async ({ page }) => {
+  // Navigate to product page
+  await page.goto('/products/123')
+  
+  // Add to cart
+  await page.click('[data-testid="add-to-cart"]')
+  
+  // Go to checkout
+  await page.click('[data-testid="cart-icon"]')
+  await page.click('[data-testid="checkout-button"]')
+  
+  // Fill shipping info
+  await page.fill('[name="email"]', 'test@example.com')
+  await page.fill('[name="address"]', '123 Main St')
+  
+  // Complete purchase
+  await page.click('[data-testid="place-order"]')
+  
+  // Verify success
+  await expect(page.locator('[data-testid="order-confirmation"]'))
+    .toBeVisible()
+})
+```
+
+## Test-Driven Development (TDD)
+
+### Red-Green-Refactor Cycle
+1. **Red**: Write a failing test
+2. **Green**: Write minimal code to pass
+3. **Refactor**: Improve code while keeping tests passing
+
+```typescript
+// 1. RED: Write failing test
+test('formats price correctly', () => {
+  expect(formatPrice(1999)).toBe('$19.99')
+})
+
+// 2. GREEN: Make it pass
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`
+}
+
+// 3. REFACTOR: Improve implementation
+function formatPrice(cents: number, currency = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency
+  }).format(cents / 100)
+}
+```
+
+## Testing Best Practices
+
+### AAA Pattern
+```typescript
+test('example', () => {
+  // Arrange: Set up test data
+  const user = createUser()
+  
+  // Act: Execute the code being tested
+  const result = processUser(user)
+  
+  // Assert: Verify the outcome
+  expect(result).toBe(expected)
+})
+```
+
+### Test Naming
+```typescript
+// Good
+test('returns null when user is not found')
+test('throws error when email is invalid')
+
+// Avoid
+test('test1')
+test('it works')
+```
+
+### Don't Test Implementation Details
+```typescript
+// ❌ Bad: Testing internal state
+test('sets loading state to true', () => {
+  expect(component.state.loading).toBe(true)
+})
+
+// ✅ Good: Testing behavior
+test('shows loading spinner', () => {
+  expect(screen.getByRole('status')).toBeInTheDocument()
+})
+```
+
+## Mocking & Stubbing
+
+### Mocking Functions
+```typescript
+const mockFetch = jest.fn()
+global.fetch = mockFetch
+
+mockFetch.mockResolvedValue({
+  json: async () => ({ data: 'test' })
+})
+```
+
+### Mocking Modules
+```typescript
+jest.mock('./api', () => ({
+  fetchUser: jest.fn().mockResolvedValue({
+    id: '1',
+    name: 'Test User'
+  })
+}))
+```
+
+## Test Coverage
+
+### Aim for Meaningful Coverage
+```bash
+npm run test:coverage
+```
+
+- Don't obsess over 100% coverage
+- Focus on critical paths
+- Cover edge cases
+- Test error handling
+
+## Performance Testing
+
+### Load Testing
+- Apache JMeter
+- k6
+- Artillery
+
+### Stress Testing
+Determine system breaking points.
+
+## Continuous Testing
+
+### In CI/CD Pipeline
+```yaml
+test:
+  script:
+    - npm run test:unit
+    - npm run test:integration
+    - npm run test:e2e
+  coverage: '/Coverage: \d+\.\d+%/'
+```
+
+## Testing Tools
+
+- **Jest**: Unit testing framework
+- **React Testing Library**: Component testing
+- **Playwright/Cypress**: E2E testing
+- **Supertest**: API testing
+- **MSW**: API mocking
+- **Vitest**: Fast unit testing
+

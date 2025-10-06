@@ -1,0 +1,589 @@
+---
+title: Documentation
+description: Building comprehensive documentation systems for products and teams
+---
+
+# Documentation
+
+Documentation is the cornerstone of successful products and teams, enabling knowledge sharing and reducing friction.
+
+## Documentation Philosophy
+
+### Why Documentation Matters
+- **Onboarding**: New team members get up to speed faster
+- **Knowledge Preservation**: Tribal knowledge becomes accessible
+- **Reduced Support**: Users find answers themselves
+- **Better Decisions**: Historical context informs future choices
+- **Collaboration**: Teams align on shared understanding
+
+### Documentation as Code
+Treat documentation like code:
+- Version controlled
+- Peer reviewed
+- Tested and validated
+- Continuously improved
+- Co-located with code
+
+## Documentation Strategy
+
+### The Four Types of Documentation
+
+#### 1. Tutorials (Learning-Oriented)
+```markdown
+# Getting Started with Our Platform
+
+## Prerequisites
+- Node.js 18 or higher
+- A text editor
+
+## Step 1: Create a New Project
+Open your terminal and run:
+```bash
+npx create-my-app my-project
+cd my-project
+```
+
+## Step 2: Start Development Server
+```bash
+npm run dev
+```
+
+Open http://localhost:3000 to see your app!
+
+## Step 3: Make Your First Change
+Edit `src/app/page.tsx` and save to see live updates.
+
+## Next Steps
+- [Build your first component](./first-component)
+- [Learn about routing](./routing)
+```
+
+#### 2. How-To Guides (Task-Oriented)
+```markdown
+# How to Add Authentication
+
+This guide shows you how to add user authentication to your app.
+
+## 1. Install Dependencies
+```bash
+npm install next-auth
+```
+
+## 2. Create Auth Configuration
+Create `auth.config.ts`:
+```typescript
+import GitHub from 'next-auth/providers/github'
+
+export const authConfig = {
+  providers: [
+    GitHub({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET
+    })
+  ]
+}
+```
+
+## 3. Add API Route
+Create `app/api/auth/[...nextauth]/route.ts`:
+```typescript
+import NextAuth from 'next-auth'
+import { authConfig } from '@/auth.config'
+
+const handler = NextAuth(authConfig)
+export { handler as GET, handler as POST }
+```
+
+## 4. Protect Routes
+Use middleware to protect routes:
+```typescript
+export { auth as middleware } from '@/auth'
+
+export const config = {
+  matcher: ['/dashboard/:path*']
+}
+```
+
+## Testing
+Test authentication by visiting `/api/auth/signin`.
+```
+
+#### 3. Reference (Information-Oriented)
+```markdown
+# API Reference
+
+## `createUser()`
+
+Creates a new user in the system.
+
+### Signature
+```typescript
+function createUser(data: CreateUserInput): Promise<User>
+```
+
+### Parameters
+- `data` (CreateUserInput): User data
+  - `email` (string): User's email address
+  - `name` (string): User's full name
+  - `password` (string): User's password (min 8 characters)
+  - `role` (string, optional): User's role. Default: 'user'
+
+### Returns
+
+- `Promise<User>`: Resolves with the created user object.
+
+### Throws
+
+- `ValidationError`: Thrown if the input is invalid.
+- `ConflictError`: Thrown if the email already exists.
+- `DatabaseError`: If database operation fails
+
+### Example
+```typescript
+const user = await createUser({
+  email: 'user@example.com',
+  name: 'John Doe',
+  password: 'securepass123'
+})
+```
+
+### See Also
+- [`updateUser()`](#updateuser)
+- [`deleteUser()`](#deleteuser)
+```
+
+#### 4. Explanation (Understanding-Oriented)
+```markdown
+# Understanding Server Components
+
+Server Components are a new paradigm in React that run exclusively on the server.
+
+## Why Server Components?
+
+### The Problem
+Traditional React components run on both server (for SSR) and client:
+- Large bundle sizes
+- Waterfall requests
+- Can't access backend resources directly
+
+### The Solution
+Server Components:
+- Run only on the server
+- Have zero impact on bundle size
+- Can access databases directly
+- Stream to the client
+
+## How They Work
+
+When a user requests a page:
+
+1. **Server** renders Server Components
+2. **Server** generates a special format (RSC payload)
+3. **Client** receives minimal JavaScript
+4. **Client** hydrates only Client Components
+
+## When to Use
+
+### Use Server Components for:
+- Data fetching
+- Backend resource access
+- Keeping sensitive code on server
+- Large dependencies
+
+### Use Client Components for:
+- Interactivity (onClick, onChange)
+- State management (useState, useReducer)
+- Browser APIs (localStorage, geolocation)
+- Custom hooks with effects
+
+## Example
+
+```typescript
+// Server Component (default)
+async function UserProfile({ userId }: { userId: string }) {
+  // Direct database access!
+  const user = await db.user.findUnique({ where: { id: userId } })
+  
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      {/* Client Component for interactivity */}
+      <FollowButton userId={user.id} />
+    </div>
+  )
+}
+
+// Client Component
+'use client'
+function FollowButton({ userId }: { userId: string }) {
+  const [following, setFollowing] = useState(false)
+  
+  return (
+    <button onClick={() => setFollowing(!following)}>
+      {following ? 'Unfollow' : 'Follow'}
+    </button>
+  )
+}
+```
+
+## Trade-offs
+
+### Benefits
+- Smaller bundles
+- Better performance
+- Direct backend access
+- Improved security
+
+### Limitations
+- No browser APIs
+- No state or effects
+- Can't use event handlers
+- Learning curve
+
+## Further Reading
+- [React Server Components RFC](https://github.com/reactjs/rfcs)
+- [Next.js Documentation](https://nextjs.org/docs)
+```
+
+## Documentation Structure
+
+### Project Structure
+```
+docs/
+├── index.md                    # Home
+├── getting-started/
+│   ├── introduction.md
+│   ├── installation.md
+│   └── quickstart.md
+├── guides/
+│   ├── authentication.md
+│   ├── deployment.md
+│   └── testing.md
+├── api-reference/
+│   ├── rest-api.md
+│   ├── graphql-api.md
+│   └── webhooks.md
+├── concepts/
+│   ├── architecture.md
+│   ├── data-model.md
+│   └── security.md
+└── resources/
+    ├── examples.md
+    ├── faq.md
+    └── troubleshooting.md
+```
+
+## Writing Style
+
+### Use Active Voice
+```markdown
+❌ The button can be clicked to submit the form.
+✅ Click the button to submit the form.
+```
+
+### Be Concise
+```markdown
+❌ In order to be able to use this feature, you will need to...
+✅ To use this feature, you need to...
+```
+
+### Use Lists
+```markdown
+❌ The system supports authentication via email and password, OAuth providers like Google and GitHub, and also magic links.
+
+✅ The system supports:
+- Email and password
+- OAuth (Google, GitHub)
+- Magic links
+```
+
+### Show Before Tell
+````markdown
+❌ To create a user, call the createUser function with an email and password.
+
+✅ Create a user:
+```typescript
+const user = await createUser({
+  email: 'user@example.com',
+  password: 'password123'
+})
+```
+````
+
+## Interactive Documentation
+
+### Code Playgrounds
+```tsx
+import { LiveProvider, LiveEditor, LivePreview } from 'react-live'
+
+export function CodePlayground({ code }: { code: string }) {
+  return (
+    <LiveProvider code={code}>
+      <LiveEditor />
+      <LivePreview />
+    </LiveProvider>
+  )
+}
+```
+
+### Interactive Examples
+```tsx
+function InteractiveExample() {
+  const [color, setColor] = useState('blue')
+  
+  return (
+    <div>
+      <h3>Try it yourself:</h3>
+      <button onClick={() => setColor('blue')}>Blue</button>
+      <button onClick={() => setColor('red')}>Red</button>
+      <div style={{ background: color, padding: 20 }}>
+        Current color: {color}
+      </div>
+    </div>
+  )
+}
+```
+
+## Documentation Platforms
+
+### Static Site Generators
+- **VitePress**: Vue-powered, fast
+- **Docusaurus**: React-based, feature-rich
+- **MkDocs**: Python, simple
+- **GitBook**: User-friendly, collaborative
+
+### Component Documentation
+- **Storybook**: Component explorer
+- **Styleguidist**: React component docs
+- **Docz**: MDX-based
+
+### API Documentation
+- **Swagger UI**: OpenAPI visualization
+- **Redoc**: Clean API docs
+- **Postman**: API collaboration
+- **GraphiQL**: GraphQL explorer
+
+## Search Functionality
+
+### Algolia DocSearch
+```javascript
+import { DocSearch } from '@docsearch/react'
+
+export function Search() {
+  return (
+    <DocSearch
+      appId="YOUR_APP_ID"
+      apiKey="YOUR_API_KEY"
+      indexName="YOUR_INDEX"
+    />
+  )
+}
+```
+
+### Local Search
+```typescript
+import FlexSearch from 'flexsearch'
+
+const index = new FlexSearch.Document({
+  document: {
+    id: 'id',
+    index: ['title', 'content'],
+    store: ['title', 'url']
+  }
+})
+
+// Index documents
+docs.forEach(doc => index.add(doc))
+
+// Search
+const results = index.search(query)
+```
+
+## Versioning Documentation
+
+### Version Switcher
+```typescript
+const versions = ['latest', 'v2.0', 'v1.0']
+
+function VersionSwitcher() {
+  const [version, setVersion] = useState('latest')
+  
+  return (
+    <select onChange={(e) => setVersion(e.target.value)}>
+      {versions.map(v => (
+        <option key={v} value={v}>{v}</option>
+      ))}
+    </select>
+  )
+}
+```
+
+### Multiple Versions
+```
+docs/
+├── latest/
+│   └── ...
+├── v2.0/
+│   └── ...
+└── v1.0/
+    └── ...
+```
+
+## Analytics & Feedback
+
+### Track Page Views
+```typescript
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+
+export function usePageViews() {
+  const router = useRouter()
+  
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      // Track page view
+      analytics.track('Page View', { url })
+    }
+    
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [router.events])
+}
+```
+
+### Feedback Widget
+```tsx
+function FeedbackWidget() {
+  const [helpful, setHelpful] = useState<boolean | null>(null)
+  
+  if (helpful === null) {
+    return (
+      <div className="feedback">
+        <p>Was this page helpful?</p>
+        <button onClick={() => setHelpful(true)}>Yes</button>
+        <button onClick={() => setHelpful(false)}>No</button>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="feedback">
+      <p>Thanks for your feedback!</p>
+      {!helpful && (
+        <textarea placeholder="How can we improve?" />
+      )}
+    </div>
+  )
+}
+```
+
+## Accessibility
+
+### Semantic HTML
+```html
+<nav aria-label="Primary navigation">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/docs">Docs</a></li>
+  </ul>
+</nav>
+
+<main>
+  <article>
+    <h1>Page Title</h1>
+    <!-- Content -->
+  </article>
+</main>
+```
+
+### Keyboard Navigation
+```tsx
+function DocsSidebar() {
+  return (
+    <nav role="navigation" aria-label="Documentation navigation">
+      <ul>
+        {items.map((item, index) => (
+          <li key={item.id}>
+            <a
+              href={item.href}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  navigate(item.href)
+                }
+              }}
+            >
+              {item.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+```
+
+## Maintenance
+
+### Regular Reviews
+- Quarterly documentation audits
+- Update outdated content
+- Remove deprecated features
+- Add new features
+
+### Contribution Guidelines
+```markdown
+# Contributing to Documentation
+
+## Making Changes
+
+1. Fork the repository
+2. Create a branch: `docs/your-topic`
+3. Make your changes
+4. Submit a pull request
+
+## Style Guide
+
+- Use present tense
+- Use active voice
+- Keep paragraphs short
+- Include code examples
+- Add screenshots when helpful
+
+## Testing
+
+Run the docs locally:
+```bash
+npm run docs:dev
+```
+```
+
+## Documentation Checklist
+
+- [ ] Getting started guide
+- [ ] Installation instructions
+- [ ] Configuration options
+- [ ] API reference
+- [ ] Code examples
+- [ ] Troubleshooting section
+- [ ] FAQ
+- [ ] Changelog
+- [ ] Contributing guide
+- [ ] Search functionality
+- [ ] Mobile responsive
+- [ ] Accessible
+- [ ] Analytics tracking
+
+## Best Practices
+
+1. **Start with why** - Explain the purpose
+2. **Show, don't tell** - Use examples
+3. **Keep it updated** - Review regularly
+4. **Make it searchable** - Good search is crucial
+5. **Get feedback** - Listen to users
+6. **Version it** - Support multiple versions
+7. **Make it accessible** - Everyone should be able to use it
+8. **Test examples** - Ensure code actually works
+

@@ -1,0 +1,533 @@
+---
+title: Pull Request
+description: Best practices for creating and reviewing pull requests
+---
+
+# Pull Request
+
+Pull requests (PRs) are a cornerstone of collaborative software development, enabling code review and knowledge sharing.
+
+## What is a Pull Request?
+
+A pull request is a proposal to merge code changes from one branch into another, typically reviewed by team members before merging.
+
+## Creating Good Pull Requests
+
+### Size Matters
+```
+❌ Large PR:
+- 2,000 lines changed
+- 50 files modified
+- Multiple features
+- Hard to review
+
+✅ Small PR:
+- 200 lines changed
+- 5 files modified
+- Single feature/fix
+- Easy to review
+```
+
+### One Thing at a Time
+```typescript
+// ❌ Bad: Multiple unrelated changes
+// - Add user authentication
+// - Fix typo in header
+// - Refactor database queries
+// - Update dependencies
+
+// ✅ Good: Single focused change
+// - Add user authentication
+```
+
+## PR Title
+
+### Format
+```
+<type>(<scope>): <description>
+
+Examples:
+feat(auth): add OAuth2 integration
+fix(api): resolve rate limiting bug
+docs(readme): update installation steps
+refactor(database): optimize query performance
+test(auth): add integration tests
+chore(deps): update dependencies
+```
+
+### Good Titles
+```
+✅ fix(checkout): resolve payment calculation error
+✅ feat(dashboard): add user analytics widget
+✅ perf(api): reduce response time by 40%
+✅ docs(api): add authentication examples
+```
+
+### Bad Titles
+```
+❌ "Fixed stuff"
+❌ "WIP"
+❌ "Updates"
+❌ "Changes"
+```
+
+## PR Description
+
+### Template
+```markdown
+## Description
+Brief summary of what this PR does and why.
+
+## Changes
+- List of specific changes made
+- Another change
+- One more change
+
+## Type of Change
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that would break existing functionality)
+- [ ] Documentation update
+
+## Testing
+How was this tested? What scenarios were covered?
+
+## Screenshots
+If applicable, add screenshots to help explain your changes.
+
+## Related Issues
+Closes #123
+Related to #456
+```
+
+### Example Description
+```markdown
+## Description
+Adds OAuth2 authentication support using Google and GitHub providers. Users can now sign in with their existing accounts instead of creating new credentials.
+
+## Changes
+- Implement OAuth2 flow with Passport.js
+- Add Google and GitHub provider configurations
+- Create callback routes for OAuth providers
+- Add "Sign in with Google/GitHub" buttons to login page
+- Store OAuth tokens in database
+- Add tests for OAuth flow
+
+## Type of Change
+- [x] New feature
+
+## Testing
+- Tested OAuth flow with Google account
+- Tested OAuth flow with GitHub account
+- Verified error handling for invalid tokens
+- Tested account linking with existing users
+- Added integration tests (see tests/auth/oauth.test.ts)
+
+## Screenshots
+[Login page with OAuth buttons]
+[OAuth consent screen]
+[Successful authentication]
+
+## Security Considerations
+- OAuth tokens are encrypted in database
+- CSRF protection enabled
+- State parameter validated
+
+## Related Issues
+Closes #234 (Add social login)
+Related to #156 (User authentication)
+```
+
+## Before Submitting
+
+### Self-Review Checklist
+- [ ] Code follows team style guide
+- [ ] Self-review completed
+- [ ] Tests added and passing
+- [ ] Documentation updated
+- [ ] No console.logs or debug code
+- [ ] No commented-out code
+- [ ] Commits are clean and meaningful
+- [ ] Branch is up to date with base
+
+### Code Quality
+```typescript
+// ❌ Before cleanup
+function processData(data) {
+  console.log('processing...', data) // Debug log
+  // const oldApproach = data.map(...) // Old code
+  const result = data.filter(x => x.isValid).map(x => ({
+    id: x.id,
+    name: x.name,
+    email: x.email,
+    // phone: x.phone // Maybe later?
+  }))
+  return result
+}
+
+// ✅ After cleanup
+function processData(data: User[]): ProcessedUser[] {
+  return data
+    .filter(user => user.isValid)
+    .map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }))
+}
+```
+
+## Requesting Review
+
+### Choose Reviewers
+```markdown
+Request review from:
+- Team members familiar with the codebase
+- Subject matter experts
+- At least 2 reviewers for critical changes
+- Junior developers (for learning)
+```
+
+### Add Context
+```markdown
+@reviewer Notes for review:
+- Focus on the authentication flow in auth.service.ts
+- The API changes are documented in docs/api.md
+- Database migration is in migrations/20240115_add_oauth.sql
+- Please check security implications
+```
+
+## Responding to Feedback
+
+### Be Open and Professional
+```markdown
+❌ "This is how it's supposed to work."
+✅ "Good point! I'll update that."
+
+❌ "That's not my responsibility."
+✅ "I see what you mean. I'll create a follow-up issue for that."
+
+❌ "Whatever, I'll change it."
+✅ "Thanks for the feedback. Updated in commit abc123."
+```
+
+### Address All Comments
+```markdown
+When a comment is:
+- Valid: Fix it and respond "Fixed in abc123"
+- Question: Answer clearly
+- Suggestion: Discuss trade-offs
+- Optional: Decide if it improves code
+
+Mark conversations as resolved once addressed.
+```
+
+### Push Additional Commits
+```bash
+# Don't force push after review has started
+git add .
+git commit -m "address review feedback"
+git push
+
+# Unless you're cleaning up commits before final merge
+git rebase -i HEAD~3
+git push --force-with-lease
+```
+
+## Reviewing Pull Requests
+
+### Review Checklist
+
+#### Functionality
+- [ ] Code does what it's supposed to do
+- [ ] Edge cases are handled
+- [ ] Error handling is appropriate
+- [ ] No obvious bugs
+
+#### Code Quality
+- [ ] Code is readable and maintainable
+- [ ] Naming is clear and consistent
+- [ ] No unnecessary complexity
+- [ ] Follows team conventions
+- [ ] No code duplication
+
+#### Testing
+- [ ] Tests are included
+- [ ] Tests are meaningful
+- [ ] Edge cases are tested
+- [ ] Tests are maintainable
+
+#### Security
+- [ ] No security vulnerabilities
+- [ ] Input is validated
+- [ ] Secrets are not hardcoded
+- [ ] Authentication/authorization is correct
+
+#### Performance
+- [ ] No obvious performance issues
+- [ ] Database queries are optimized
+- [ ] Large datasets handled efficiently
+- [ ] Caching used appropriately
+
+### Types of Comments
+
+#### Blocking (Must Fix)
+```markdown
+❌ This will cause a memory leak. Please fix before merging.
+
+❌ Security issue: User input is not sanitized. This is vulnerable to XSS attacks.
+```
+
+#### Suggestion (Should Consider)
+```markdown
+💡 Consider using a Map here for O(1) lookups instead of O(n) with array.find().
+
+💡 This could be simplified using the utility function we created in utils.ts
+```
+
+#### Question (Seeking Clarification)
+```markdown
+❓ Why are we using setTimeout here? Is there a race condition we're handling?
+
+❓ Could you explain the reasoning behind this approach?
+```
+
+#### Nitpick (Optional)
+```markdown
+nit: Consider renaming this to `isUserAuthenticated` for clarity.
+
+nit: Missing comma here for consistency.
+```
+
+#### Praise (Positive Feedback)
+```markdown
+✨ Great use of TypeScript generics here!
+
+✨ Excellent test coverage for edge cases!
+```
+
+### Writing Good Review Comments
+
+```markdown
+❌ Bad:
+"This is wrong."
+"Why did you do it this way?"
+"This doesn't work."
+
+✅ Good:
+"This will throw an error if items is empty. Consider adding a check: `if (!items.length) return []`"
+
+"I see you're using a linear search here. Since this runs on every render, consider using a Map for O(1) lookup:
+```typescript
+const itemMap = new Map(items.map(i => [i.id, i]))
+```
+"
+
+"This approach works, but have you considered using our existing `useAuth` hook? It handles token refresh automatically."
+```
+
+### Suggesting Code
+````markdown
+Instead of:
+```typescript
+const valid = data.filter(x => x.active).length > 0
+```
+
+Consider:
+```typescript
+const hasActiveItems = data.some(item => item.active)
+```
+
+This is more readable and stops iterating once it finds a match.
+````
+
+## Merging
+
+### Merge Strategies
+
+#### Merge Commit
+```bash
+git merge feature-branch
+# Creates merge commit
+# Preserves full history
+# Good for feature branches
+```
+
+#### Squash and Merge
+```bash
+git merge --squash feature-branch
+# Combines all commits into one
+# Cleaner history
+# Good for PRs with many small commits
+```
+
+#### Rebase and Merge
+```bash
+git rebase main
+# Replays commits on top of main
+# Linear history
+# Good for keeping clean history
+```
+
+### Before Merging
+- [ ] All comments addressed
+- [ ] Required approvals received
+- [ ] CI/CD checks passing
+- [ ] Branch is up to date
+- [ ] No merge conflicts
+- [ ] Tests are passing
+
+### After Merging
+```bash
+# Delete the feature branch
+git branch -d feature-branch
+git push origin --delete feature-branch
+
+# Update your local main
+git checkout main
+git pull
+```
+
+## PR Best Practices
+
+### Do
+✅ Keep PRs small and focused
+✅ Write descriptive titles and descriptions
+✅ Add tests for new features
+✅ Update documentation
+✅ Respond to feedback promptly
+✅ Be respectful and professional
+✅ Review your own code first
+✅ Link related issues
+
+### Don't
+❌ Submit massive PRs
+❌ Mix unrelated changes
+❌ Ignore review feedback
+❌ Force push after review
+❌ Take feedback personally
+❌ Submit untested code
+❌ Leave commented-out code
+❌ Skip the description
+
+## PR Templates
+
+### Bug Fix Template
+```markdown
+## Bug Description
+What was the bug?
+
+## Root Cause
+Why did it happen?
+
+## Solution
+How did you fix it?
+
+## Testing
+How did you verify the fix?
+
+## Related Issues
+Fixes #123
+```
+
+### Feature Template
+```markdown
+## Feature Description
+What does this feature do?
+
+## Motivation
+Why do we need this?
+
+## Implementation
+How does it work?
+
+## UI Changes
+Screenshots/videos of UI changes
+
+## Testing
+How was this tested?
+
+## Documentation
+Link to updated docs
+
+## Related Issues
+Implements #123
+```
+
+### Refactoring Template
+```markdown
+## What Changed
+What was refactored?
+
+## Why
+Why was this refactored?
+
+## Impact
+What's the impact?
+
+## Testing
+How did you ensure nothing broke?
+
+## Related Issues
+Part of #123
+```
+
+## Common Issues
+
+### Merge Conflicts
+```bash
+# Update your branch with latest main
+git checkout feature-branch
+git fetch origin
+git merge origin/main
+
+# Resolve conflicts
+# Edit conflicting files
+git add .
+git commit
+git push
+```
+
+### Failed CI/CD
+```bash
+# Pull latest changes
+git pull
+
+# Run tests locally
+npm test
+
+# Fix issues
+# Commit and push
+git add .
+git commit -m "fix: resolve failing tests"
+git push
+```
+
+### Stale Branch
+```bash
+# Update with latest main
+git checkout main
+git pull
+git checkout feature-branch
+git rebase main
+git push --force-with-lease
+```
+
+## Tools
+
+- **GitHub**: Pull requests and code review
+- **GitLab**: Merge requests
+- **Bitbucket**: Pull requests
+- **Danger**: Automate code review
+- **CodeStream**: Review in IDE
+- **Reviewable**: Advanced code review
+
+## Metrics
+
+Track PR metrics to improve:
+- Time to first review
+- Time to merge
+- Number of review cycles
+- PR size distribution
+- Review participation
+

@@ -1,0 +1,81 @@
+---
+title: Code Review
+description: Effective code review practices and guidelines
+---
+
+# Code Review
+
+Code reviews are crucial for maintaining code quality, knowledge sharing, and team growth.
+
+## Purpose of Code Reviews
+
+- Catch bugs and logic errors early
+- Ensure code quality and consistency
+- Share knowledge across the team
+- Improve overall codebase maintainability
+
+## Review Checklist
+
+### Functionality
+- Does the code do what it's supposed to do?
+- Are edge cases handled?
+- Is error handling appropriate?
+
+### Code Quality
+- Is the code readable and maintainable?
+- Are naming conventions followed?
+- Is there unnecessary complexity?
+- Are there code smells?
+
+### Testing
+- Are there adequate tests?
+- Do tests cover edge cases?
+- Are tests meaningful and maintainable?
+
+### Performance
+- Are there obvious performance issues?
+- Are database queries optimized?
+- Is caching used appropriately?
+
+### Security
+- Are there security vulnerabilities?
+- Is user input validated?
+- Are secrets properly managed?
+
+## Best Practices
+
+### For Authors
+- Keep changes small and focused
+- Provide context in the PR description
+- Self-review before requesting review
+- Be open to feedback
+
+### For Reviewers
+- Be respectful and constructive
+- Explain the "why" behind suggestions
+- Distinguish between blocking and non-blocking comments
+- Respond in a timely manner
+
+## Review Comments
+
+### Good Examples
+```
+"Consider using a Set here for O(1) lookups instead of O(n) 
+with array.includes(). This will improve performance when 
+the array grows large."
+```
+
+### Avoid
+```
+"This is wrong."
+"Why did you do it this way?"
+```
+
+## Automation
+
+Use automated tools to catch common issues:
+- Linters (ESLint, Biome)
+- Formatters (Prettier)
+- Type checkers (TypeScript)
+- Security scanners
+

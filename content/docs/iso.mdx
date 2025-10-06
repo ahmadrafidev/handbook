@@ -1,0 +1,638 @@
+---
+title: ISO
+description: ISO standards, certifications, and quality management systems
+---
+
+# ISO
+
+ISO (International Organization for Standardization) standards provide frameworks for quality, security, and process management.
+
+## Common ISO Standards
+
+### ISO 9001 - Quality Management
+Framework for consistent quality in products and services.
+
+#### Core Principles
+- Customer focus
+- Leadership
+- Engagement of people
+- Process approach
+- Improvement
+- Evidence-based decisions
+- Relationship management
+
+#### Implementation
+```markdown
+1. Define quality objectives
+2. Document processes
+3. Implement controls
+4. Monitor performance
+5. Continuous improvement
+```
+
+### ISO 27001 - Information Security
+Framework for managing information security.
+
+#### Key Controls
+- Access control
+- Cryptography
+- Physical security
+- Operations security
+- Communications security
+- Incident management
+- Business continuity
+- Compliance
+
+#### Example Controls
+```typescript
+// Access Control
+interface AccessControl {
+  // Control user access
+  authenticateUser(credentials: Credentials): boolean
+  
+  // Enforce least privilege
+  authorizeAction(user: User, resource: Resource): boolean
+  
+  // Review access rights
+  auditAccess(user: User): AccessLog[]
+  
+  // Revoke access
+  revokeAccess(user: User, resource: Resource): void
+}
+
+// Cryptography
+interface Cryptography {
+  // Encrypt sensitive data
+  encryptData(data: string, key: string): string
+  
+  // Secure key management
+  rotateKeys(): void
+  
+  // Hash passwords
+  hashPassword(password: string): string
+}
+
+// Incident Management
+interface IncidentManagement {
+  // Detect incidents
+  detectIncident(event: SecurityEvent): Incident | null
+  
+  // Respond to incidents
+  respondToIncident(incident: Incident): Response
+  
+  // Log incidents
+  logIncident(incident: Incident): void
+  
+  // Review lessons learned
+  reviewIncident(incident: Incident): LessonsLearned
+}
+```
+
+### ISO 20000 - IT Service Management
+Framework for delivering quality IT services.
+
+#### Service Management Processes
+- Service desk
+- Incident management
+- Problem management
+- Change management
+- Release management
+- Capacity management
+- Availability management
+
+### ISO 22301 - Business Continuity
+Framework for business continuity management.
+
+#### Key Components
+```markdown
+1. Risk Assessment
+   - Identify threats
+   - Assess impact
+   - Prioritize risks
+
+2. Business Impact Analysis
+   - Critical functions
+   - Recovery objectives
+   - Resource requirements
+
+3. Continuity Strategies
+   - Backup systems
+   - Alternative facilities
+   - Communication plans
+
+4. Testing & Exercises
+   - Regular drills
+   - Scenario testing
+   - Update plans
+```
+
+## ISO Certification Process
+
+### 1. Gap Analysis
+```markdown
+Current State → Identify Gaps → Define Actions
+
+Example:
+- Current: No formal security policy
+- Gap: ISO 27001 requires documented policies
+- Action: Create and approve security policy
+```
+
+### 2. Implementation
+```markdown
+- Document processes
+- Train employees
+- Implement controls
+- Gather evidence
+- Conduct internal audits
+```
+
+### 3. Certification Audit
+
+#### Stage 1: Documentation Review
+```markdown
+Auditor reviews:
+- Policies and procedures
+- Process documentation
+- Evidence of implementation
+- Internal audit results
+```
+
+#### Stage 2: Implementation Audit
+```markdown
+Auditor verifies:
+- Processes are followed
+- Controls are effective
+- Evidence is maintained
+- Continuous improvement
+```
+
+### 4. Certification
+```markdown
+✅ Pass: Certificate issued (valid 3 years)
+❌ Fail: Address non-conformities and re-audit
+```
+
+### 5. Surveillance Audits
+```markdown
+Year 1: Surveillance audit
+Year 2: Surveillance audit
+Year 3: Re-certification audit
+```
+
+## Documentation Requirements
+
+### Quality Manual
+```markdown
+# Quality Manual
+
+## 1. Scope
+Defines boundaries of QMS
+
+## 2. Quality Policy
+Organization's quality commitment
+
+## 3. Organizational Context
+Business environment and stakeholders
+
+## 4. Leadership
+Management commitment and roles
+
+## 5. Planning
+Quality objectives and risk management
+
+## 6. Support
+Resources, competence, awareness
+
+## 7. Operation
+Process execution and controls
+
+## 8. Performance Evaluation
+Monitoring, measurement, analysis
+
+## 9. Improvement
+Non-conformity and continual improvement
+```
+
+### Procedures
+```markdown
+# Procedure: Incident Management
+
+## Purpose
+Respond to and resolve security incidents
+
+## Scope
+All information security incidents
+
+## Responsibilities
+- Security team: Incident response
+- IT team: Technical remediation
+- Management: Decision making
+
+## Process
+1. Detection and reporting
+2. Classification and prioritization
+3. Investigation and diagnosis
+4. Resolution and recovery
+5. Closure and review
+
+## Records
+- Incident log
+- Investigation reports
+- Lessons learned
+```
+
+### Records
+```typescript
+// Example: Training Records
+interface TrainingRecord {
+  employeeId: string
+  employeeName: string
+  trainingTopic: string
+  trainingDate: Date
+  trainer: string
+  completionStatus: 'completed' | 'in-progress' | 'pending'
+  certificateIssued: boolean
+  nextReviewDate: Date
+}
+
+// Example: Audit Records
+interface AuditRecord {
+  auditId: string
+  auditType: 'internal' | 'external' | 'supplier'
+  auditDate: Date
+  auditor: string
+  scope: string
+  findings: Finding[]
+  recommendations: string[]
+  followUpDate: Date
+}
+
+interface Finding {
+  severity: 'major' | 'minor' | 'observation'
+  description: string
+  evidence: string
+  correctiveAction: string
+  responsiblePerson: string
+  targetDate: Date
+  status: 'open' | 'closed'
+}
+```
+
+## PDCA Cycle
+
+### Plan
+```markdown
+1. Identify objectives
+2. Assess current state
+3. Plan improvements
+4. Define metrics
+```
+
+### Do
+```markdown
+1. Implement changes
+2. Train personnel
+3. Execute processes
+4. Collect data
+```
+
+### Check
+```markdown
+1. Monitor performance
+2. Measure results
+3. Analyze data
+4. Identify gaps
+```
+
+### Act
+```markdown
+1. Address issues
+2. Standardize improvements
+3. Update documentation
+4. Continuous improvement
+```
+
+## ISO in Software Development
+
+### Quality Assurance
+```typescript
+// Code review checklist (ISO 9001)
+interface CodeReviewChecklist {
+  functionalityCorrect: boolean
+  codeQuality: boolean
+  testCoverage: boolean
+  documentationComplete: boolean
+  securityReviewed: boolean
+  performanceAcceptable: boolean
+  reviewerApproval: string
+  reviewDate: Date
+}
+
+// Testing evidence (ISO 9001)
+interface TestEvidence {
+  testId: string
+  testDescription: string
+  testSteps: string[]
+  expectedResult: string
+  actualResult: string
+  status: 'pass' | 'fail'
+  tester: string
+  testDate: Date
+  evidence: string[] // screenshots, logs
+}
+```
+
+### Security Controls
+```typescript
+// Access control matrix (ISO 27001)
+interface AccessControlMatrix {
+  userId: string
+  roles: string[]
+  permissions: Permission[]
+  approvedBy: string
+  approvalDate: Date
+  reviewDate: Date
+}
+
+// Security incident log (ISO 27001)
+interface SecurityIncident {
+  incidentId: string
+  reportedDate: Date
+  reportedBy: string
+  description: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  affectedSystems: string[]
+  impactAssessment: string
+  responseActions: Action[]
+  resolvedDate: Date
+  lessonsLearned: string
+}
+```
+
+### Change Management
+```typescript
+// Change request (ISO 20000)
+interface ChangeRequest {
+  changeId: string
+  title: string
+  description: string
+  requestor: string
+  urgency: 'emergency' | 'urgent' | 'normal'
+  impact: 'high' | 'medium' | 'low'
+  affectedSystems: string[]
+  implementationPlan: string
+  rollbackPlan: string
+  approvalStatus: 'pending' | 'approved' | 'rejected'
+  approvers: Approval[]
+  implementationDate: Date
+}
+
+interface Approval {
+  approver: string
+  role: string
+  decision: 'approved' | 'rejected'
+  comments: string
+  date: Date
+}
+```
+
+## Compliance Checklist
+
+### ISO 9001 Checklist
+- [ ] Quality policy documented
+- [ ] Quality objectives defined
+- [ ] Processes documented
+- [ ] Responsibilities assigned
+- [ ] Resources allocated
+- [ ] Training conducted
+- [ ] Performance monitored
+- [ ] Internal audits performed
+- [ ] Management review conducted
+- [ ] Continuous improvement
+
+### ISO 27001 Checklist
+- [ ] Security policy approved
+- [ ] Risk assessment completed
+- [ ] Controls implemented
+- [ ] Access control enforced
+- [ ] Encryption used
+- [ ] Incident response plan
+- [ ] Business continuity plan
+- [ ] Employee training
+- [ ] Regular audits
+- [ ] Compliance review
+
+## Internal Audits
+
+### Audit Planning
+```markdown
+## Internal Audit Plan
+
+Audit Scope: Development process
+Audit Date: 2024-02-15
+Auditor: John Doe
+
+Areas to Audit:
+- Code review process
+- Testing procedures
+- Deployment process
+- Documentation
+- Change management
+
+Audit Criteria:
+- ISO 9001:2015
+- Company procedures
+- Industry best practices
+```
+
+### Audit Checklist
+```markdown
+## Code Review Process Audit
+
+1. Is there a documented code review procedure?
+   ☐ Yes ☐ No ☐ Partial
+   Evidence: _______
+
+2. Are all code changes reviewed before merge?
+   ☐ Yes ☐ No ☐ Partial
+   Evidence: _______
+
+3. Are reviewers trained in the process?
+   ☐ Yes ☐ No ☐ Partial
+   Evidence: _______
+
+4. Are review comments documented?
+   ☐ Yes ☐ No ☐ Partial
+   Evidence: _______
+
+5. Is there evidence of reviews?
+   ☐ Yes ☐ No ☐ Partial
+   Evidence: _______
+```
+
+### Audit Report
+```markdown
+# Internal Audit Report
+
+## Audit Details
+- Date: 2024-02-15
+- Auditor: John Doe
+- Scope: Development process
+
+## Findings
+
+### Major Non-Conformity
+None
+
+### Minor Non-Conformity
+1. Code review checklist not consistently used
+   - Evidence: 3 of 10 PRs had no checklist
+   - Corrective Action: Mandatory checklist enforcement
+   - Responsible: Tech Lead
+   - Due Date: 2024-03-01
+
+### Observations
+1. Review turnaround time varies significantly
+   - Recommendation: Set SLA for reviews
+   - Responsible: Engineering Manager
+
+## Positive Findings
+- 100% of code is reviewed before merge
+- Clear documentation of review process
+- Good engagement from reviewers
+
+## Conclusion
+Overall process is effective with minor improvements needed.
+```
+
+## Management Review
+
+### Review Agenda
+```markdown
+# Management Review Meeting
+
+Date: Quarterly
+Attendees: Management team
+
+## Agenda
+
+1. Review of previous actions
+2. Changes in context (internal/external)
+3. Performance metrics
+   - Quality objectives
+   - Customer satisfaction
+   - Process performance
+4. Audit results
+   - Internal audits
+   - External audits
+5. Non-conformities and corrective actions
+6. Customer feedback
+7. Resource needs
+8. Improvement opportunities
+9. Actions for next period
+```
+
+## Continuous Improvement
+
+### Improvement Process
+```typescript
+interface ImprovementProposal {
+  id: string
+  title: string
+  description: string
+  currentState: string
+  proposedState: string
+  benefits: string[]
+  costs: number
+  effort: string
+  priority: 'high' | 'medium' | 'low'
+  proposedBy: string
+  status: 'proposed' | 'approved' | 'implemented' | 'rejected'
+}
+
+interface CorrectiveAction {
+  id: string
+  issueDescription: string
+  rootCause: string
+  correctiveAction: string
+  preventiveAction: string
+  responsible: string
+  dueDate: Date
+  status: 'open' | 'in-progress' | 'completed' | 'verified'
+  effectiveness: boolean
+}
+```
+
+## Benefits of ISO Certification
+
+### Business Benefits
+- Improved processes
+- Reduced costs
+- Better quality
+- Increased efficiency
+- Competitive advantage
+- Customer confidence
+
+### Customer Benefits
+- Consistent quality
+- Reliable service
+- Secure data
+- Regulatory compliance
+- Trust and confidence
+
+## Best Practices
+
+1. **Management Commitment**: Leadership must support ISO
+2. **Employee Involvement**: Everyone participates
+3. **Documentation**: Keep it simple and useful
+4. **Regular Reviews**: Don't wait for audits
+5. **Continuous Improvement**: Always look for better ways
+6. **Training**: Ensure competence
+7. **Evidence**: Maintain records
+8. **Integration**: Embed in daily work
+
+## Common Challenges
+
+### Documentation Overload
+```markdown
+❌ Too much documentation
+→ Focus on what adds value
+
+✅ Right-sized documentation
+→ Document what's necessary
+→ Keep it practical
+→ Make it accessible
+```
+
+### Resistance to Change
+```markdown
+❌ "This is just bureaucracy"
+→ Show value and benefits
+
+✅ "This helps us work better"
+→ Involve people in design
+→ Make it easy to follow
+→ Celebrate improvements
+```
+
+### Maintaining Momentum
+```markdown
+❌ Only care during audits
+→ Integrate into daily work
+
+✅ Living management system
+→ Regular reviews
+→ Continuous improvement
+→ Make it part of culture
+```
+
+## Resources
+
+- ISO website: iso.org
+- ISO standards store
+- Certification bodies
+- Consultants
+- Training courses
+- Online communities
+

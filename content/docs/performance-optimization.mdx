@@ -1,0 +1,345 @@
+---
+title: Performance Optimization
+description: Techniques and strategies for optimizing application performance
+---
+
+# Performance Optimization
+
+Performance optimization ensures applications are fast, responsive, and efficient.
+
+## Web Performance Metrics
+
+### Core Web Vitals
+- **LCP (Largest Contentful Paint)**: < 1.5s
+- **FID (First Input Delay)**: < 100ms
+- **CLS (Cumulative Layout Shift)**: < 0.1
+
+### Other Key Metrics
+- **FCP (First Contentful Paint)**
+- **TTI (Time to Interactive)**
+- **TBT (Total Blocking Time)**
+- **Speed Index**
+
+## Frontend Optimization
+
+### Code Splitting
+```typescript
+// Dynamic imports
+const Dashboard = dynamic(() => import('./Dashboard'), {
+  loading: () => <Skeleton />
+})
+
+// Route-based splitting
+const routes = [
+  {
+    path: '/dashboard',
+    component: lazy(() => import('./Dashboard'))
+  }
+]
+```
+
+### Image Optimization
+```tsx
+import Image from 'next/image'
+
+<Image
+  src="/hero.jpg"
+  alt="Hero image"
+  width={1200}
+  height={600}
+  priority
+  placeholder="blur"
+  blurDataURL="data:image/..."
+/>
+```
+
+### Lazy Loading
+```typescript
+// Intersection Observer for lazy loading
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.src = entry.target.dataset.src
+      observer.unobserve(entry.target)
+    }
+  })
+})
+
+document.querySelectorAll('img[data-src]').forEach(img => {
+  observer.observe(img)
+})
+```
+
+### React Performance
+
+#### Memoization
+```typescript
+import { memo, useMemo, useCallback } from 'react'
+
+// Component memoization
+const ExpensiveComponent = memo(({ data }) => {
+  return <div>{/* ... */}</div>
+})
+
+// Value memoization
+const sortedData = useMemo(() => {
+  return data.sort((a, b) => a.value - b.value)
+}, [data])
+
+// Function memoization
+const handleClick = useCallback(() => {
+  console.log('clicked')
+}, [])
+```
+
+#### Virtual Lists
+```typescript
+import { FixedSizeList } from 'react-window'
+
+<FixedSizeList
+  height={600}
+  itemCount={items.length}
+  itemSize={50}
+  width="100%"
+>
+  {({ index, style }) => (
+    <div style={style}>{items[index]}</div>
+  )}
+</FixedSizeList>
+```
+
+### Bundle Optimization
+
+#### Webpack/Next.js
+```javascript
+// next.config.js
+module.exports = {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10
+          }
+        }
+      }
+    }
+    return config
+  }
+}
+```
+
+#### Tree Shaking
+```typescript
+// Import only what you need
+import { debounce } from 'lodash-es'
+// Instead of
+import _ from 'lodash'
+```
+
+## Backend Optimization
+
+### Database Optimization
+
+#### Indexing
+```sql
+-- Add index for frequently queried columns
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+
+-- Composite index
+CREATE INDEX idx_orders_user_status 
+ON orders(user_id, status);
+```
+
+#### Query Optimization
+```typescript
+// ❌ N+1 query problem
+const users = await User.findAll()
+for (const user of users) {
+  const posts = await Post.findAll({ where: { userId: user.id } })
+}
+
+// ✅ Use eager loading
+const users = await User.findAll({
+  include: [{ model: Post }]
+})
+```
+
+#### Connection Pooling
+```typescript
+const pool = new Pool({
+  max: 20,
+  min: 5,
+  idleTimeoutMillis: 30000
+})
+```
+
+### Caching Strategies
+
+#### In-Memory Cache
+```typescript
+import { LRUCache } from 'lru-cache'
+
+const cache = new LRUCache({
+  max: 500,
+  ttl: 1000 * 60 * 5 // 5 minutes
+})
+
+async function getUser(id: string) {
+  const cached = cache.get(id)
+  if (cached) return cached
+  
+  const user = await db.user.findUnique({ where: { id } })
+  cache.set(id, user)
+  return user
+}
+```
+
+#### Redis Cache
+```typescript
+import Redis from 'ioredis'
+
+const redis = new Redis()
+
+async function getCachedData(key: string) {
+  const cached = await redis.get(key)
+  if (cached) return JSON.parse(cached)
+  
+  const data = await fetchData()
+  await redis.setex(key, 3600, JSON.stringify(data))
+  return data
+}
+```
+
+#### HTTP Caching
+```typescript
+// Next.js API Route
+export async function GET() {
+  return new Response(JSON.stringify(data), {
+    headers: {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30'
+    }
+  })
+}
+```
+
+### API Optimization
+
+#### Pagination
+```typescript
+interface PaginationParams {
+  page: number
+  limit: number
+}
+
+async function getUsers({ page = 1, limit = 20 }: PaginationParams) {
+  const offset = (page - 1) * limit
+  
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      skip: offset,
+      take: limit
+    }),
+    db.user.count()
+  ])
+  
+  return {
+    data: users,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  }
+}
+```
+
+#### GraphQL DataLoader
+```typescript
+import DataLoader from 'dataloader'
+
+const userLoader = new DataLoader(async (userIds) => {
+  const users = await db.user.findMany({
+    where: { id: { in: userIds } }
+  })
+  
+  const userMap = new Map(users.map(u => [u.id, u]))
+  return userIds.map(id => userMap.get(id))
+})
+```
+
+## Network Optimization
+
+### Compression
+```typescript
+// Enable gzip/brotli compression
+import compression from 'compression'
+
+app.use(compression())
+```
+
+### CDN Usage
+- Serve static assets from CDN
+- Use edge caching
+- Geographic distribution
+
+### HTTP/2 & HTTP/3
+- Multiplexing
+- Server push
+- Header compression
+
+## Monitoring Performance
+
+### Web Vitals
+```typescript
+import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals'
+
+function sendToAnalytics(metric) {
+  const body = JSON.stringify(metric)
+  navigator.sendBeacon('/analytics', body)
+}
+
+getCLS(sendToAnalytics)
+getFID(sendToAnalytics)
+getFCP(sendToAnalytics)
+getLCP(sendToAnalytics)
+getTTFB(sendToAnalytics)
+```
+
+### Performance API
+```typescript
+const perfData = window.performance.timing
+const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart
+console.log(`Page load time: ${pageLoadTime}ms`)
+```
+
+## Tools
+
+### Analysis
+- Chrome DevTools (Lighthouse)
+- WebPageTest
+- Bundle Analyzer
+- React DevTools Profiler
+
+### Monitoring
+- Sentry Performance
+- New Relic
+- DataDog
+- Google Analytics
+
+## Best Practices
+
+- Measure before optimizing
+- Focus on user-perceived performance
+- Optimize critical rendering path
+- Minimize main thread work
+- Use service workers for offline support
+- Implement progressive enhancement
+- Monitor performance in production
+- Set performance budgets
+

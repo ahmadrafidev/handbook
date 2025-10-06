@@ -1,0 +1,426 @@
+---
+title: Software Maintainability
+description: Writing maintainable code that stands the test of time
+---
+
+# Software Maintainability
+
+Maintainable code is easy to understand, modify, and extend over time.
+
+## Clean Code Principles
+
+### Meaningful Names
+```typescript
+// ❌ Poor names
+const d = new Date()
+const x = users.filter(u => u.a)
+
+// ✅ Clear names
+const currentDate = new Date()
+const activeUsers = users.filter(user => user.isActive)
+```
+
+### Functions Should Do One Thing
+```typescript
+// ❌ Does too much
+function processUserAndSendEmail(user: User) {
+  validateUser(user)
+  saveToDatabase(user)
+  sendWelcomeEmail(user)
+  logAnalytics(user)
+}
+
+// ✅ Single responsibility
+function registerUser(user: User) {
+  validateUser(user)
+  return saveToDatabase(user)
+}
+
+function sendWelcomeToNewUser(user: User) {
+  sendWelcomeEmail(user)
+  logUserRegistration(user)
+}
+```
+
+### Small Functions
+```typescript
+// Keep functions short and focused
+function calculateDiscount(price: number, userType: UserType): number {
+  if (isPremiumUser(userType)) {
+    return applyPremiumDiscount(price)
+  }
+  
+  if (isFirstTimeBuyer(userType)) {
+    return applyFirstTimeDiscount(price)
+  }
+  
+  return price
+}
+```
+
+## Code Organization
+
+### File Structure
+```
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx
+│   │   ├── Button.test.tsx
+│   │   ├── Button.stories.tsx
+│   │   └── index.ts
+│   └── Card/
+│       ├── Card.tsx
+│       └── index.ts
+├── hooks/
+│   ├── useAuth.ts
+│   └── useData.ts
+├── lib/
+│   ├── api.ts
+│   ├── utils.ts
+│   └── constants.ts
+├── types/
+│   └── index.ts
+└── app/
+    ├── page.tsx
+    └── layout.tsx
+```
+
+### Module Organization
+```typescript
+// ✅ Group related functionality
+// user/
+//   ├── user.types.ts
+//   ├── user.service.ts
+//   ├── user.repository.ts
+//   ├── user.validator.ts
+//   └── index.ts
+
+// Export clean interfaces
+export { UserService } from './user.service'
+export type { User, CreateUserDTO } from './user.types'
+```
+
+## Comments & Documentation
+
+### When to Comment
+```typescript
+// ❌ Unnecessary comments
+// Increment i
+i++
+
+// Get user
+const user = getUser()
+
+// ✅ Useful comments
+// Apply discount: Premium users get 20% off, first-time buyers get 10% off
+const finalPrice = calculateDiscount(basePrice, user.type)
+
+// Workaround for Safari bug: https://bugs.webkit.org/show_bug.cgi?id=12345
+if (isSafari) {
+  applyWorkaround()
+}
+```
+
+### JSDoc for Functions
+```typescript
+/**
+ * Calculates the total price including tax and discounts
+ * 
+ * @param basePrice - The original price before modifications
+ * @param taxRate - Tax rate as a decimal (e.g., 0.08 for 8%)
+ * @param discountCode - Optional discount code to apply
+ * @returns The final price after tax and discounts
+ * 
+ * @example
+ * ```ts
+ * const total = calculateTotal(100, 0.08, 'SAVE10')
+ * // Returns: 97.2 (100 - 10% discount + 8% tax)
+ * ```
+ */
+function calculateTotal(
+  basePrice: number,
+  taxRate: number,
+  discountCode?: string
+): number {
+  // Implementation
+}
+```
+
+## Error Handling
+
+### Custom Errors
+```typescript
+class ValidationError extends Error {
+  constructor(
+    message: string,
+    public field: string
+  ) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+class NotFoundError extends Error {
+  constructor(resource: string, id: string) {
+    super(`${resource} with id ${id} not found`)
+    this.name = 'NotFoundError'
+  }
+}
+```
+
+### Error Handling Pattern
+```typescript
+// ❌ Silent failures
+try {
+  await saveUser(user)
+} catch (error) {
+  // Ignored
+}
+
+// ✅ Proper error handling
+try {
+  await saveUser(user)
+} catch (error) {
+  if (error instanceof ValidationError) {
+    return { error: error.message, field: error.field }
+  }
+  
+  logger.error('Failed to save user', { error, userId: user.id })
+  throw error
+}
+```
+
+## Type Safety
+
+### Use TypeScript Effectively
+```typescript
+// ✅ Strict types
+interface User {
+  id: string
+  email: string
+  role: 'admin' | 'user' | 'guest'
+  preferences: UserPreferences
+}
+
+interface UserPreferences {
+  theme: 'light' | 'dark'
+  notifications: boolean
+}
+
+// ✅ Avoid 'any'
+function processData<T>(data: T): T {
+  return data
+}
+
+// ✅ Use discriminated unions
+type Result<T> =
+  | { success: true; data: T }
+  | { success: false; error: string }
+
+function getUser(id: string): Result<User> {
+  // Implementation
+}
+```
+
+## Testing for Maintainability
+
+### Write Testable Code
+```typescript
+// ❌ Hard to test
+class UserService {
+  async createUser(data: CreateUserDTO) {
+    const user = await database.insert(data)
+    await emailService.send(user.email, 'Welcome!')
+    return user
+  }
+}
+
+// ✅ Easy to test (dependency injection)
+class UserService {
+  constructor(
+    private db: Database,
+    private emailService: EmailService
+  ) {}
+  
+  async createUser(data: CreateUserDTO) {
+    const user = await this.db.users.create(data)
+    await this.emailService.sendWelcome(user.email)
+    return user
+  }
+}
+```
+
+## Code Duplication
+
+### DRY Principle
+```typescript
+// ❌ Duplication
+function formatUserName(user: User) {
+  return `${user.firstName} ${user.lastName}`.trim()
+}
+
+function formatAuthorName(author: Author) {
+  return `${author.firstName} ${author.lastName}`.trim()
+}
+
+// ✅ Extract common logic
+function formatFullName(person: { firstName: string; lastName: string }) {
+  return `${person.firstName} ${person.lastName}`.trim()
+}
+```
+
+### When Duplication is OK
+```typescript
+// Sometimes similar-looking code serves different purposes
+function validateUserEmail(email: string) {
+  // User-specific validation rules
+  if (!email.includes('@')) return false
+  if (email.length < 5) return false
+  return true
+}
+
+function validateAdminEmail(email: string) {
+  // Admin-specific validation rules
+  if (!email.includes('@company.com')) return false
+  return validateUserEmail(email)
+}
+```
+
+## Refactoring
+
+### Extract Method
+```typescript
+// Before
+function processOrder(order: Order) {
+  let total = 0
+  for (const item of order.items) {
+    total += item.price * item.quantity
+  }
+  
+  if (order.user.isPremium) {
+    total *= 0.9
+  }
+  
+  total *= 1.08 // tax
+  
+  return total
+}
+
+// After
+function processOrder(order: Order) {
+  const subtotal = calculateSubtotal(order.items)
+  const discounted = applyDiscount(subtotal, order.user)
+  return applyTax(discounted)
+}
+```
+
+### Extract Variable
+```typescript
+// Before
+if (user.age > 18 && user.hasLicense && user.insurance.isActive) {
+  // Allow rental
+}
+
+// After
+const isEligibleForRental = 
+  user.age > 18 && 
+  user.hasLicense && 
+  user.insurance.isActive
+
+if (isEligibleForRental) {
+  // Allow rental
+}
+```
+
+## Dependencies
+
+### Keep Dependencies Minimal
+```typescript
+// ❌ Too many dependencies
+import _ from 'lodash'
+import moment from 'moment'
+import axios from 'axios'
+import uuid from 'uuid'
+
+// ✅ Use native alternatives when possible
+const uniqueId = crypto.randomUUID()
+const now = new Date()
+```
+
+### Dependency Injection
+```typescript
+// ✅ Inject dependencies
+interface Logger {
+  info(message: string): void
+  error(message: string, error: Error): void
+}
+
+class UserService {
+  constructor(
+    private logger: Logger,
+    private db: Database
+  ) {}
+  
+  async createUser(data: CreateUserDTO) {
+    try {
+      const user = await this.db.users.create(data)
+      this.logger.info(`User created: ${user.id}`)
+      return user
+    } catch (error) {
+      this.logger.error('Failed to create user', error)
+      throw error
+    }
+  }
+}
+```
+
+## Technical Debt
+
+### Managing Technical Debt
+- Document known issues
+- Track in issue tracker
+- Prioritize based on impact
+- Allocate time for refactoring
+- Don't let perfect be enemy of good
+
+### TODO Comments
+```typescript
+// TODO: Optimize this query for large datasets
+// See: https://github.com/org/repo/issues/123
+function fetchAllUsers() {
+  return db.users.findMany()
+}
+```
+
+## Code Review for Maintainability
+
+### Review Checklist
+- [ ] Code is easy to understand
+- [ ] Functions are small and focused
+- [ ] Names are clear and descriptive
+- [ ] No unnecessary complexity
+- [ ] Adequate test coverage
+- [ ] Error handling is proper
+- [ ] No code duplication
+- [ ] Types are well-defined
+
+## Metrics
+
+### Cyclomatic Complexity
+Keep functions simple (complexity < 10)
+
+### Code Coverage
+Aim for >80% for critical paths
+
+### Code Churn
+High churn may indicate design issues
+
+## Tools
+
+- **Linters**: ESLint, Biome
+- **Formatters**: Prettier
+- **Type Checkers**: TypeScript
+- **Code Quality**: SonarQube, Code Climate
+- **Dependency Analysis**: Dependency Cruiser
+
