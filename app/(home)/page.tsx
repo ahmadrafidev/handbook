@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, ArrowRight, ExternalLink } from 'lucide-react';
+import { BookOpen, ArrowRight, ExternalLink, Wrench } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -64,6 +64,21 @@ export default function HomePage() {
                 <div className="font-medium">Browse Notes</div>
                 <div className="text-sm text-fd-muted-foreground">
                   Explore notes and learnings
+                </div>
+              </div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-fd-muted-foreground transition-transform group-hover:translate-x-1" />
+          </Link>
+          <Link
+            href="/tools"
+            className="group flex items-center justify-between rounded-lg border border-fd-border bg-fd-card p-4 transition-colors hover:bg-fd-accent"
+          >
+            <div className="flex items-center gap-3">
+              <Wrench className="h-5 w-5 text-fd-muted-foreground" />
+              <div>
+                <div className="font-medium">Engineering Tools</div>
+                <div className="text-sm text-fd-muted-foreground">
+                  Discover curated development tools
                 </div>
               </div>
             </div>

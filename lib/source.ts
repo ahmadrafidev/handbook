@@ -1,4 +1,4 @@
-import { docs } from '@/.source';
+import { docs, tools } from '@/.source';
 import { type InferPageType, loader } from 'fumadocs-core/source';
 import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
 
@@ -6,6 +6,12 @@ import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
 export const source = loader({
   baseUrl: '/docs',
   source: docs.toFumadocsSource(),
+  plugins: [lucideIconsPlugin()],
+});
+
+export const toolsSource = loader({
+  baseUrl: '/tools',
+  source: tools.toFumadocsSource(),
   plugins: [lucideIconsPlugin()],
 });
 

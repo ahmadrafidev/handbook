@@ -1,0 +1,17 @@
+{
+  "title": "Tools",
+  "pages": [
+    "index",
+    "development-coding",
+    "devops-infrastructure",
+    "design-prototyping",
+    "productivity-collaboration",
+    "testing-qa",
+    "monitoring-analytics",
+    "database-data",
+    "version-control",
+    "api-development",
+    "terminal-cli"
+  ]
+}
+
