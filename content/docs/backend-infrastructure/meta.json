@@ -1,0 +1,12 @@
+{
+  "title": "Backend & Infrastructure",
+  "icon": "Server",
+  "pages": [
+    "api",
+    "data-engineering",
+    "deployment",
+    "monitoring-and-logging",
+    "site-reliability-engineering"
+  ]
+}
+

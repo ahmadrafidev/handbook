@@ -1,0 +1,11 @@
+{
+  "title": "Documentation & Communication",
+  "icon": "BookOpen",
+  "pages": [
+    "documentation",
+    "technical-documentation",
+    "rfc",
+    "product-design-article"
+  ]
+}
+

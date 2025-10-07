@@ -1,0 +1,18 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "---Core Topics---",
+    "development-practices",
+    "architecture-systems",
+    "frontend-development",
+    "backend-infrastructure",
+    "---Product & Teams---",
+    "product-experimentation",
+    "documentation-communication",
+    "team-process",
+    "---Advanced---",
+    "security-compliance",
+    "advanced-topics"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Product & Experimentation",
+  "icon": "FlaskConical",
+  "pages": [
+    "ab-testing",
+    "feature-flags",
+    "artificial-intelligence"
+  ]
+}
+

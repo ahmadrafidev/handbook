@@ -1,0 +1,13 @@
+{
+  "title": "Frontend Development",
+  "icon": "Palette",
+  "pages": [
+    "design-engineering",
+    "design-system",
+    "rendering",
+    "web-performance",
+    "performance-optimization",
+    "internationalization"
+  ]
+}
+

@@ -1,0 +1,10 @@
+{
+  "title": "Advanced Topics",
+  "icon": "Rocket",
+  "pages": [
+    "web3-blockchain",
+    "software-versioning",
+    "software-maintainability"
+  ]
+}
+

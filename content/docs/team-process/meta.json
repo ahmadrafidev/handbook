@@ -1,0 +1,11 @@
+{
+  "title": "Team & Process",
+  "icon": "Users",
+  "pages": [
+    "engineering-management",
+    "culture",
+    "soft-skill",
+    "post-mortem-analysis"
+  ]
+}
+

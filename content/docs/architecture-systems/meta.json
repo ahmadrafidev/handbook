@@ -1,0 +1,12 @@
+{
+  "title": "Architecture & Systems",
+  "icon": "Network",
+  "pages": [
+    "software-architecture",
+    "microservices",
+    "distributed-systems",
+    "micro-frontends",
+    "scalability"
+  ]
+}
+

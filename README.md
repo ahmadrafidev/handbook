@@ -1,8 +1,8 @@
-# devbook - an opinionated engineering handbook
-
 <div align="center">
   <img src="/public/images/logo.png" alt="DevBook Logo" width="120" style="background: white; padding: 8px; border-radius: 8px;" />
 </div>
+
+# devbook - an opinionated engineering handbook
 
 ## motivation
 

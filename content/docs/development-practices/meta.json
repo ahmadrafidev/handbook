@@ -1,0 +1,13 @@
+{
+  "title": "Development Practices",
+  "icon": "Code",
+  "pages": [
+    "code-quality",
+    "code-review",
+    "testing",
+    "version-control",
+    "commit-message",
+    "pull-request"
+  ]
+}
+
