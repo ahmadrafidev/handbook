@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, ArrowRight, ExternalLink, Wrench } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col justify-center px-6 py-16">
-      <div className="mx-auto w-full max-w-2xl space-y-4 md:space-y-6">
+      <div className="mx-auto w-full max-w-2xl space-y-8">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-xl md:text-3xl font-semibold tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
             devbook - an opinionated engineering handbook
           </h1>
           <p className="text-fd-muted-foreground">
@@ -52,37 +52,25 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* Quick Links */}
-        <div className="flex flex-col gap-2 pt-2">
+        {/* Grid Layout*/}
+        <div className="grid grid-cols-2 gap-4">
           <Link
             href="/docs"
-            className="group flex items-center justify-between rounded-lg border border-fd-border bg-fd-card p-4 transition-colors hover:bg-fd-accent"
+            className="rounded-lg border border-fd-border bg-fd-card p-6 transition-colors hover:bg-fd-accent"
           >
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-fd-muted-foreground" />
-              <div>
-                <div className="font-medium">Browse Notes</div>
-                <div className="text-sm text-fd-muted-foreground">
-                  Explore notes and learnings
-                </div>
-              </div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-fd-muted-foreground transition-transform group-hover:translate-x-1" />
+            <h2 className="font-medium">Documentation</h2>
+            <p className="text-sm text-fd-muted-foreground mt-1">
+              Browse notes and learnings
+            </p>
           </Link>
           <Link
             href="/tools"
-            className="group flex items-center justify-between rounded-lg border border-fd-border bg-fd-card p-4 transition-colors hover:bg-fd-accent"
+            className="rounded-lg border border-fd-border bg-fd-card p-6 transition-colors hover:bg-fd-accent"
           >
-            <div className="flex items-center gap-3">
-              <Wrench className="h-5 w-5 text-fd-muted-foreground" />
-              <div>
-                <div className="font-medium">Engineering Tools</div>
-                <div className="text-sm text-fd-muted-foreground">
-                  Discover curated development tools
-                </div>
-              </div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-fd-muted-foreground transition-transform group-hover:translate-x-1" />
+            <h2 className="font-medium">Tools</h2>
+            <p className="text-sm text-fd-muted-foreground mt-1">
+              Curated development tools
+            </p>
           </Link>
         </div>
       </div>
