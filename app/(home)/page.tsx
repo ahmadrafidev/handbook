@@ -29,7 +29,7 @@ export default function HomePage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
           >
-            Personal Website
+            Website
             <ExternalLink className="h-3 w-3" />
           </a>
           <a

@@ -2,6 +2,7 @@
   "title": "Tools",
   "pages": [
     "index",
+    "browsers",
     "development-coding",
     "devops-infrastructure",
     "design-prototyping",
