@@ -21,37 +21,6 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Social Links */}
-        <div className="flex flex-wrap gap-2">
-          <a
-            href="https://www.rafiwirana.co/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
-          >
-            Website
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <a
-            href="https://github.com/ahmadrafidev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
-          >
-            GitHub
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <a
-            href="https://linkedin.com/in/ahmadrafiwirana"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
-          >
-            LinkedIn
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-
         {/* Grid Layout*/}
         <div className="grid grid-cols-2 gap-4">
           <Link
@@ -72,6 +41,37 @@ export default function HomePage() {
               Curated development tools
             </p>
           </Link>
+        </div>
+
+        {/* Social Links */}
+        <div className="flex flex-wrap justify-center gap-2">
+          <a
+            href="https://www.rafiwirana.co/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            About Me
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href="https://github.com/ahmadrafidev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            GitHub
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href="https://linkedin.com/in/ahmadrafiwirana"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 text-sm transition-colors hover:bg-fd-accent"
+          >
+            LinkedIn
+            <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
       </div>
     </main>
