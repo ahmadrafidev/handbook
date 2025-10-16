@@ -27,7 +27,7 @@ export function baseOptions(): BaseLayoutProps {
     // see https://fumadocs.dev/docs/ui/navigation/links
     links: [
       {
-        text: 'Docs',
+        text: 'Notes',
         url: '/docs',
         active: 'nested-url',
       },

@@ -44,7 +44,7 @@ export default function HomePage() {
             href="/docs"
             className="rounded-lg border border-fd-border bg-fd-card p-6 transition-colors hover:bg-fd-accent"
           >
-            <h2 className="font-medium">Documentation</h2>
+            <h2 className="font-medium">Notes</h2>
             <p className="text-sm text-fd-muted-foreground mt-1">
               Browse notes and learnings
             </p>
